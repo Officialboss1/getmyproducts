@@ -40,11 +40,11 @@ const AdminManagement = () => {
   const {
     admins,
     loading,
-    error,
+  error: _error,
     createAdmin,
     updateAdmin,
     deleteAdmin,
-    refetch,
+  refetch: _refetch,
   } = useAdmins();
 
   const handleCreateAdmin = async (values) => {
@@ -53,8 +53,8 @@ const AdminManagement = () => {
       message.success('Admin created successfully!');
       setModalVisible(false);
       form.resetFields();
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message);
     }
   };
 
@@ -65,8 +65,8 @@ const AdminManagement = () => {
       setModalVisible(false);
       setEditingAdmin(null);
       form.resetFields();
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message);
     }
   };
 
@@ -74,8 +74,8 @@ const AdminManagement = () => {
     try {
       await deleteAdmin(adminId);
       message.success('Admin deleted successfully!');
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message);
     }
   };
 

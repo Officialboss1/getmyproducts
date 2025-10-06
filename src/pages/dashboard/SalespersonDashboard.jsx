@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Row,
   Col,
@@ -23,88 +23,25 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import api from "../../utils/axios";
+import useDashboardData from '../../hooks/useDashboardData';
 
 const { Title, Text } = Typography;
 
 const SalespersonDashboard = ({ user }) => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState(null);
-  const [dailyProgress, setDailyProgress] = useState({ current: 0, target: 30, percentage: 0 });
-  const [weeklyProgress, setWeeklyProgress] = useState({ current: 0, target: 210, percentage: 0 });
-  const [monthlyProgress, setMonthlyProgress] = useState({ current: 0, target: 900, percentage: 0 });
-  const [error, setError] = useState(null);
-
-  const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch progress for each period
-
-      // Only fetch sales for this user if salesperson, else fetch all
-      let salesPromise;
-      if (user && user.role === "salesperson") {
-        salesPromise = api.get(`/sales?userId=${user._id}`);
-      } else {
-        salesPromise = api.get("/sales");
-      }
-
-      const [dailyProgressRes, weeklyProgressRes, monthlyProgressRes, targetsResponse, salesResponse, competitionsResponse] = await Promise.all([
-        api.get("/analytics/progress?period=daily"),
-        api.get("/analytics/progress?period=weekly"),
-        api.get("/analytics/progress?period=monthly"),
-        api.get("/targets"),
-        salesPromise,
-        api.get("/competitions"),
-      ]);
-
-      setDashboardData({
-        progress: {
-          daily: dailyProgressRes.data,
-          weekly: weeklyProgressRes.data,
-          monthly: monthlyProgressRes.data,
-        },
-        targets: targetsResponse.data,
-        sales: salesResponse.data || [],
-        competitions: competitionsResponse.data || [],
-      });
-
-      // Set progress states for easier access
-      setDailyProgress({
-        current: dailyProgressRes.data?.totalUnits || 0,
-        target: dailyProgressRes.data?.target || targetsResponse.data?.daily || 30,
-        percentage: dailyProgressRes.data?.percentage ? parseFloat(dailyProgressRes.data.percentage) : 0,
-      });
-      setWeeklyProgress({
-        current: weeklyProgressRes.data?.totalUnits || 0,
-        target: weeklyProgressRes.data?.target || targetsResponse.data?.weekly || 210,
-        percentage: weeklyProgressRes.data?.percentage ? parseFloat(weeklyProgressRes.data.percentage) : 0,
-      });
-      setMonthlyProgress({
-        current: monthlyProgressRes.data?.totalUnits || 0,
-        target: monthlyProgressRes.data?.target || targetsResponse.data?.monthly || 900,
-        percentage: monthlyProgressRes.data?.percentage ? parseFloat(monthlyProgressRes.data.percentage) : 0,
-      });
-    } catch (err) {
-      console.error("Error fetching dashboard data:", err);
-      setError(err.response?.data?.message || "Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const { loading, error, data: hookData, refresh } = useDashboardData(user);
+  const dashboard = hookData;
+  const dailyProgress = dashboard?.derived?.dailyProgress ?? { current: 0, target: 30, percentage: 0 };
+  const weeklyProgress = dashboard?.derived?.weeklyProgress ?? { current: 0, target: 210, percentage: 0 };
+  const monthlyProgress = dashboard?.derived?.monthlyProgress ?? { current: 0, target: 900, percentage: 0 };
 
 
-  const data = dashboardData || {
+  const data = dashboard || {
     progress: { daily: {}, weekly: {}, monthly: {} },
     targets: {},
     sales: [],
     competitions: [],
+    referralStats: null,
   };
 
   const getProgressColor = (percentage) => {
@@ -139,7 +76,7 @@ const SalespersonDashboard = ({ user }) => {
           <Space>
             <Button
               icon={<ReloadOutlined />}
-              onClick={fetchDashboardData}
+              onClick={refresh}
               loading={loading}
             >
               Refresh
@@ -190,7 +127,7 @@ const SalespersonDashboard = ({ user }) => {
               <Statistic
                 title="Total Revenue"
                 value={data.progress?.monthly?.totalRevenue || 0}
-                prefix="₦"
+                prefix="$"
                 valueStyle={{ color: "#52c41a" }}
               />
             </Card>
@@ -199,8 +136,17 @@ const SalespersonDashboard = ({ user }) => {
             <Card>
               <Statistic
                 title="Active Referrals"
-                value={data.progress?.referrals || 0}
-                suffix={`/ ${data.targets?.requiredReferrals || 5}`}
+                value={
+                  data.referralStats === null
+                    ? 'N/A'
+                    : (
+                        data.referralStats?.activeReferrals ??
+                        data.referralStats?.progress?.referrals?.current ??
+                        data.progress?.referrals ??
+                        0
+                      )
+                }
+                suffix={`/ ${data.referralStats?.progress?.referrals?.target ?? data.targets?.requiredReferrals ?? 5}`}
                 prefix={<TeamOutlined />}
                 valueStyle={{ color: "#722ed1" }}
               />
@@ -281,7 +227,7 @@ const SalespersonDashboard = ({ user }) => {
                         title={`${sale.quantity_sold} units - ${productName}`}
                         description={new Date(sale.createdAt).toLocaleDateString()}
                       />
-                      <Tag color="blue">₦{sale.total_amount}</Tag>
+                      <Tag color="blue">${sale.total_amount}</Tag>
                     </List.Item>
                   );
                 }}

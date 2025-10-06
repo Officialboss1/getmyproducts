@@ -32,7 +32,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-const SuperAdminDashboard = ({ user }) => {
+const SuperAdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [systemData, setSystemData] = useState(null);
@@ -89,7 +89,6 @@ const SuperAdminDashboard = ({ user }) => {
       value: data.totalRevenue,
       prefix: <DollarOutlined />,
       valueStyle: { color: '#52c41a' },
-      prefix: '$',
     },
     {
       title: 'Admins',

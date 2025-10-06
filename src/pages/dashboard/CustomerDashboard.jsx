@@ -22,7 +22,6 @@ import {
   ArrowRightOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { customerAPI } from '../../services/customerApi';
 
 const { Title, Text } = Typography;
 

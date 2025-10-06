@@ -205,8 +205,11 @@ export const targetsAPI = {
 
 // Analytics & Progress APIs
 export const analyticsAPI = {
-  getProgress: (userId = '', period = 'monthly') =>
-    api.get(`/analytics/progress/${userId}?period=${period}`),
+  getProgress: (userId = '', period = 'monthly') => {
+    const base = '/analytics/progress';
+    const url = userId ? `${base}/${userId}` : base;
+    return api.get(`${url}?period=${period}`);
+  },
 
   getLeaderboard: (period = 'monthly') =>
     api.get(`/analytics/leaderboard?period=${period}`),
@@ -214,8 +217,6 @@ export const analyticsAPI = {
   getDailySales: () =>
     api.get(`/analytics/daily`),
 
-  getLeaderboard: (params = {}) => 
-    api.get("/analytics/leaderboard", { params }),
 
   getPerformanceTrend: (userId = "", period = "monthly") => {
     const url = userId ? `/analytics/trend/${userId}` : "/analytics/trend";
@@ -280,23 +281,21 @@ export const auditAPI = {
 // TODO: THESE ENDPOINTS NEED TO BE IMPLEMENTED ON BACKEND
 // Referrals APIs
 export const referralsAPI = {
-  // ✅ Fetch referral link for the logged-in salesperson
-  getReferralLink: () => 
-    api.get("/referrals/link"),
-
-  // ✅ Fetch all referrals that belong to the logged-in salesperson
   getMyReferrals: () => 
-    api.get("/referrals/my-referrals"),
-
-  // ✅ Get referral statistics (e.g. total, completed, pending)
+    api.get("/referrals/my-referrals"), // MISSING ENDPOINT
+  
+  getReferralProgress: () => 
+    api.get("/referrals/progress"), // MISSING ENDPOINT
+  
+  createReferral: (referralData) => 
+    api.post("/referrals", referralData), // MISSING ENDPOINT
+  
   getReferralStats: () => 
-    api.get("/referrals/stats"),
-
-  // ✅ Check or trigger promotion for a salesperson
-  checkReferralPromotion: (salesPersonId) => 
-    api.post(`/referrals/promotion/${salesPersonId}`),
+    api.get("/referrals/stats"), // MISSING ENDPOINT
+  
+  validateReferralCode: (code) => 
+    api.post("/referrals/validate", { code }), // MISSING ENDPOINT
 };
-
 
 // Teams APIs
 export const teamsAPI = {

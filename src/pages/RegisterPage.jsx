@@ -13,7 +13,7 @@ const Register = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // ✅ Capture referral code from URL (e.g. ?ref=ABCD123)
+  // Capture referral code from URL (e.g. ?ref=ABCD123)
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const code = params.get("ref");

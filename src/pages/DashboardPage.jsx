@@ -289,6 +289,8 @@ const DashboardPage = () => {
         return <Referrals user={user} />;
       
       case "/analytics":
+        // Both admin and non-admin analytics pages are handled differently.
+        if (role === 'admin') return <Analytics user={user} />;
         return <AnalyticsTargets user={user} />;
 
       case "/profile":
@@ -297,17 +299,14 @@ const DashboardPage = () => {
       // Super Admin specific routes
       case "/admins":
         return <AdminManagement user={user} />;
-      
+
       case "/salespersons":
-        if (role === 'super_admin') {
-          return <SalespersonsManagement user={user} />;
-        }
+        if (role === 'super_admin') return <SalespersonsManagement user={user} />;
+        if (role === 'admin') return <UserManagement user={user} />;
         break;
 
       case "/customers":
-        if (role === 'super_admin') {
-          return <CustomersManagement user={user} />;
-        }
+        if (role === 'super_admin') return <CustomersManagement user={user} />;
         break;
 
       case "/audit":
@@ -315,13 +314,6 @@ const DashboardPage = () => {
 
       case "/referral-settings":
         return <ReferralSettings user={user} />;
-
-      // Admin specific routes
-      case "/salespersons":
-        if (role === 'admin') {
-          return <UserManagement user={user} />;
-        }
-        break;
 
       case "/targets":
         if (role === 'admin') {
@@ -341,11 +333,7 @@ const DashboardPage = () => {
         }
         break;
 
-      case "/analytics":
-        if (role === 'admin') {
-          return <Analytics user={user} />;
-        }
-        break;
+      
 
       // Customer specific routes
       case "/customer/purchases":

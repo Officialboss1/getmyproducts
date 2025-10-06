@@ -13,6 +13,7 @@ import {
   Divider,
   Alert,
   Empty,
+  message,
 } from 'antd';
 import {
   TrophyOutlined,
@@ -95,7 +96,7 @@ const Competitions = () => {
       await api.competitions.joinCompetition(competitionId);
       message.success('Successfully joined the competition!');
       fetchCompetitions();
-    } catch (error) {
+    } catch {
       message.error('Failed to join competition');
     }
   };

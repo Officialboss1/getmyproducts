@@ -42,7 +42,7 @@ const ReferralSettings = () => {
   const {
     settings,
     loading: settingsLoading,
-    error,
+    error: _error,
     updateSettings,
   } = useReferralSettings();
 
@@ -113,8 +113,8 @@ const ReferralSettings = () => {
       };
       await updateSettings(updatedSettings);
       message.success('Referral settings updated successfully!');
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message);
     } finally {
       setLoading(false);
     }

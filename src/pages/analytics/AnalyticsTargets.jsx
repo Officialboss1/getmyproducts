@@ -43,6 +43,10 @@ const AnalyticsTargets = ({ user }) => {
   const [progress, setProgress] = useState(null);
   const [salesData, setSalesData] = useState([]);
   const [dailyStats, setDailyStats] = useState({});
+  const [_competitions, setCompetitions] = useState([]);
+  const [_dailyProgress, setDailyProgress] = useState({ current: 0, target: 30, percentage: 0 });
+  const [weeklyProgress, setWeeklyProgress] = useState({ current: 0, target: 210, percentage: 0 });
+  const [monthlyProgress, setMonthlyProgress] = useState({ current: 0, target: 900, percentage: 0 });
   const [period, setPeriod] = useState('monthly');
   const [editingTargets, setEditingTargets] = useState(false);
   const [targetsForm] = Form.useForm();
@@ -51,22 +55,68 @@ const AnalyticsTargets = ({ user }) => {
     fetchAnalyticsData();
   }, [period]);
 
+
+
   const fetchAnalyticsData = async () => {
     setLoading(true);
     try {
-      const [targetsResponse, progressResponse, salesResponse, dailyResponse] = await Promise.all([
+      const [
+        targetsResponse,
+        dailyProgressRes,
+        weeklyProgressRes,
+        monthlyProgressRes,
+        salesResponse,
+        dailyResponse,
+    competitionsResponse,
+      ] = await Promise.all([
         api.targets.getTargets(),
-        api.analytics.getProgress('', period),
+        api.analytics.getProgress('', 'daily'),
+        api.analytics.getProgress('', 'weekly'),
+        api.analytics.getProgress('', 'monthly'),
         api.sales.getSales(),
         api.analytics.getDailySales(),
+        api.competitions.getCompetitions(),
       ]);
 
+      // Debug logs to inspect raw responses from the backend
+      console.debug('AnalyticsTargets: API responses', {
+        targets: targetsResponse?.data,
+        dailyProgress: dailyProgressRes?.data,
+        weeklyProgress: weeklyProgressRes?.data,
+        monthlyProgress: monthlyProgressRes?.data,
+        sales: salesResponse?.data,
+        dailyStats: dailyResponse?.data,
+        competitions: competitionsResponse?.data,
+      });
+
       setTargets(targetsResponse.data);
-      setProgress(progressResponse.data);
+      setProgress({
+        daily: dailyProgressRes.data,
+        weekly: weeklyProgressRes.data,
+        monthly: monthlyProgressRes.data,
+      });
       setSalesData(salesResponse.data || []);
       setDailyStats(dailyResponse.data || {});
-    } catch (error) {
-      console.error('Error fetching analytics data:', error);
+  setCompetitions(competitionsResponse.data || []);
+
+      // Set progress states for easier access
+      setDailyProgress({
+        current: dailyProgressRes.data?.totalUnits || 0,
+        target: dailyProgressRes.data?.target || targetsResponse.data?.daily || 30,
+        percentage: dailyProgressRes.data?.percentage ? parseFloat(dailyProgressRes.data.percentage) : 0,
+      });
+      setWeeklyProgress({
+        current: weeklyProgressRes.data?.totalUnits || 0,
+        target: weeklyProgressRes.data?.target || targetsResponse.data?.weekly || 210,
+        percentage: weeklyProgressRes.data?.percentage ? parseFloat(weeklyProgressRes.data.percentage) : 0,
+      });
+      setMonthlyProgress({
+        current: monthlyProgressRes.data?.totalUnits || 0,
+        target: monthlyProgressRes.data?.target || targetsResponse.data?.monthly || 900,
+        percentage: monthlyProgressRes.data?.percentage ? parseFloat(monthlyProgressRes.data.percentage) : 0,
+      });
+    } catch (_error) {
+      console.error('Error fetching analytics data:', _error);
       message.error('Failed to load analytics data');
     } finally {
       setLoading(false);
@@ -79,7 +129,7 @@ const AnalyticsTargets = ({ user }) => {
       message.success('Targets updated successfully!');
       setEditingTargets(false);
       fetchAnalyticsData();
-    } catch (error) {
+    } catch {
       message.error('Failed to update targets');
     }
   };
@@ -90,7 +140,7 @@ const AnalyticsTargets = ({ user }) => {
       message.success('Targets reset to default values');
       fetchAnalyticsData();
       targetsForm.resetFields();
-    } catch (error) {
+    } catch {
       message.error('Failed to reset targets');
     }
   };
@@ -117,41 +167,69 @@ const AnalyticsTargets = ({ user }) => {
 
   // ---------------------- Performance Calculations ----------------------
   const getPerformanceStats = () => {
-    // Use dailyStats.totalUnits for daily, and try to sum salesData for weekly if available
-    const dailyUnits = dailyStats?.totalUnits || 0;
+  // Daily units: prefer backend daily progress, then dailyStats from analytics API
+  const dailyUnits = Number(progress?.daily?.totalUnits ?? dailyStats?.totalUnits ?? 0);
 
-    // Calculate weekly units from salesData if possible, fallback to progress if not
+    // Helper to safely extract quantity from a sale record
+    const extractQty = (sale) => {
+      return Number(
+        sale?.quantity_sold ?? sale?.units ?? sale?.quantity ?? sale?.total_units ?? 0
+      );
+    };
+
+    // Calculate weekly units from salesData if available, otherwise prefer backend progress values
     let weeklyUnits = 0;
     if (Array.isArray(salesData) && salesData.length > 0) {
-      // Assume salesData contains sales for the current week, sum their units
-      weeklyUnits = salesData.reduce((sum, sale) => sum + (sale.units || 0), 0);
-    } else if (progress?.weeklyUnits !== undefined) {
-      weeklyUnits = progress.weeklyUnits;
-    } else {
-      weeklyUnits = 0;
+      weeklyUnits = salesData.reduce((sum, sale) => sum + extractQty(sale), 0);
+    } else if (progress?.weekly?.totalUnits !== undefined) {
+      weeklyUnits = Number(progress.weekly.totalUnits || 0);
+    } else if (weeklyProgress?.current) {
+      weeklyUnits = Number(weeklyProgress.current || 0);
     }
 
-    const monthlyUnits = progress?.totalUnits || 0;
+    // Monthly units: prefer backend monthly progress, then monthlyProgress state, then sum of sales
+    let monthlyUnits = 0;
+    if (progress?.monthly?.totalUnits !== undefined) {
+      monthlyUnits = Number(progress.monthly.totalUnits || 0);
+    } else if (monthlyProgress?.current) {
+      monthlyUnits = Number(monthlyProgress.current || 0);
+    } else if (Array.isArray(salesData) && salesData.length > 0) {
+      monthlyUnits = salesData.reduce((sum, sale) => sum + extractQty(sale), 0);
+    }
 
-    const dailyProgress = {
+    const dailyTarget = Number(data.targets?.daily ?? 30);
+    const weeklyTarget = Number(data.targets?.weekly ?? 210);
+    const monthlyTarget = Number(data.targets?.monthly ?? 900);
+
+    const dailyProgressResult = {
       current: dailyUnits,
-      target: data.targets.daily,
-      percentage: data.targets.daily ? (dailyUnits / data.targets.daily) * 100 : 0,
+      target: dailyTarget,
+      percentage: dailyTarget ? (dailyUnits / dailyTarget) * 100 : 0,
     };
 
-    const weeklyProgress = {
+    const weeklyProgressResult = {
       current: weeklyUnits,
-      target: data.targets.weekly,
-      percentage: data.targets.weekly ? (weeklyUnits / data.targets.weekly) * 100 : 0,
+      target: weeklyTarget,
+      percentage: weeklyTarget ? (weeklyUnits / weeklyTarget) * 100 : 0,
     };
 
-    const monthlyProgress = {
+    // Prefer backend-provided percentage for monthly if available, otherwise compute from units
+    const monthlyPercentageFromBackend =
+      progress?.monthly?.percentage !== undefined
+        ? parseFloat(progress.monthly.percentage || 0)
+        : (monthlyProgress?.percentage ?? 0);
+
+    const monthlyProgressResult = {
       current: monthlyUnits,
-      target: data.targets.monthly,
-      percentage: parseFloat(data.progress.percentage),
+      target: monthlyTarget,
+      percentage: monthlyPercentageFromBackend || (monthlyTarget ? (monthlyUnits / monthlyTarget) * 100 : 0),
     };
 
-    return { dailyProgress, weeklyProgress, monthlyProgress };
+    return {
+      dailyProgress: dailyProgressResult,
+      weeklyProgress: weeklyProgressResult,
+      monthlyProgress: monthlyProgressResult,
+    };
   };
 
   const performanceStats = getPerformanceStats();
@@ -275,7 +353,7 @@ const AnalyticsTargets = ({ user }) => {
               <Card>
                 <Statistic
                   title="Total Sales"
-                  value={data.progress.totalUnits}
+                  value={progress?.monthly?.totalUnits ?? data.progress.totalUnits}
                   suffix={`/ ${data.targets.monthly}`}
                   valueStyle={{ color: '#1890ff' }}
                 />
@@ -290,8 +368,8 @@ const AnalyticsTargets = ({ user }) => {
               <Card>
                 <Statistic
                   title="Total Revenue"
-                  value={data.progress.totalRevenue}
-                  prefix="$"
+                  value={progress?.monthly?.totalRevenue ?? data.progress.totalRevenue}
+                  prefix="₦"
                   valueStyle={{ color: '#52c41a' }}
                 />
                 <div style={{ marginTop: 8 }}>

@@ -164,23 +164,27 @@ const Referrals = () => {
                 <Text>Referrals Progress</Text>
                 <Progress
                   percent={
-                    Math.min(
+                    Math.round(
+                      Math.min(
                       100,
                       (referralStats.progress?.referrals?.current /
                         referralStats.progress?.referrals?.target) *
                         100
                     ) || 0
+                    )
                   }
                 />
                 <Text>Sales Progress</Text>
                 <Progress
                   percent={
-                    Math.min(
+                   Math.round(
+                     Math.min(
                       100,
                       (referralStats.progress?.sales?.current /
                         referralStats.progress?.sales?.target) *
                         100
                     ) || 0
+                   )
                   }
                   status="active"
                 />

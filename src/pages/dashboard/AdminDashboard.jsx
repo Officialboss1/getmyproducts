@@ -33,7 +33,7 @@ import { adminAPI } from '../../services/adminApi';
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-const AdminDashboard = ({ user }) => {
+const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [systemData, setSystemData] = useState(null);
@@ -95,7 +95,6 @@ const AdminDashboard = ({ user }) => {
       value: data.totalRevenue,
       prefix: <DollarOutlined />,
       valueStyle: { color: '#52c41a' },
-      prefix: '$',
     },
     {
       title: 'Active Salespersons',

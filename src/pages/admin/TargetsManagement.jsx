@@ -42,7 +42,7 @@ const TargetsManagement = () => {
   const {
     users: salespersons,
     loading: usersLoading,
-    refetch: refetchUsers,
+    refetch: _refetchUsers,
   } = useUsers('sales_person');
 
   useEffect(() => {
@@ -64,7 +64,7 @@ const TargetsManagement = () => {
             targets: response.data,
             progress: progressResponse.data,
           };
-        } catch (error) {
+        } catch {
           return {
             ...user,
             targets: null,
@@ -75,8 +75,8 @@ const TargetsManagement = () => {
 
       const data = await Promise.all(targetsPromises);
       setTargetsData(data);
-    } catch (error) {
-      console.error('Error fetching targets data:', error);
+    } catch (_error) {
+      console.error('Error fetching targets data:', _error);
       message.error('Failed to load targets data');
     } finally {
       setLoading(false);

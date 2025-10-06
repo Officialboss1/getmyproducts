@@ -47,11 +47,11 @@ const UserManagement = () => {
   const {
     users: salespersons,
     loading,
-    error,
+    error: _error,
     updateUser,
     createUser,
     deleteUser,
-    refetch,
+    refetch: _refetch,
   } = useUsers('sales_person');
 
   // Mock customers data
@@ -206,7 +206,7 @@ const UserManagement = () => {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, record) => (
+      render: (_, _record) => (
         <Space>
           <Tooltip title="View Details">
             <Button type="link" icon={<EyeOutlined />} />

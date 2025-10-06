@@ -47,11 +47,11 @@ const CompetitionsManagement = () => {
   const {
     competitions,
     loading,
-    error,
+    error: _error,
     createCompetition,
     updateCompetition,
     deleteCompetition,
-    refetch,
+    refetch: _refetch,
   } = useCompetitions();
 
   const handleCreateCompetition = async (values) => {
@@ -67,8 +67,8 @@ const CompetitionsManagement = () => {
       message.success('Competition created successfully!');
       setModalVisible(false);
       form.resetFields();
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message || 'Failed to create competition');
     }
   };
 
@@ -86,8 +86,8 @@ const CompetitionsManagement = () => {
       setModalVisible(false);
       setEditingCompetition(null);
       form.resetFields();
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message || 'Failed to update competition');
     }
   };
 
@@ -95,8 +95,8 @@ const CompetitionsManagement = () => {
     try {
       await deleteCompetition(competitionId);
       message.success('Competition deleted successfully!');
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message || 'Failed to delete competition');
     }
   };
 

@@ -26,7 +26,6 @@ import {
   ArrowDownOutlined,
 } from '@ant-design/icons';
 import { adminAPI } from '../../services/adminApi';
-import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
