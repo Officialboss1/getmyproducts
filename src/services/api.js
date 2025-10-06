@@ -280,21 +280,23 @@ export const auditAPI = {
 // TODO: THESE ENDPOINTS NEED TO BE IMPLEMENTED ON BACKEND
 // Referrals APIs
 export const referralsAPI = {
+  // ✅ Fetch referral link for the logged-in salesperson
+  getReferralLink: () => 
+    api.get("/referrals/link"),
+
+  // ✅ Fetch all referrals that belong to the logged-in salesperson
   getMyReferrals: () => 
-    api.get("/referrals/my-referrals"), // MISSING ENDPOINT
-  
-  getReferralProgress: () => 
-    api.get("/referrals/progress"), // MISSING ENDPOINT
-  
-  createReferral: (referralData) => 
-    api.post("/referrals", referralData), // MISSING ENDPOINT
-  
+    api.get("/referrals/my-referrals"),
+
+  // ✅ Get referral statistics (e.g. total, completed, pending)
   getReferralStats: () => 
-    api.get("/referrals/stats"), // MISSING ENDPOINT
-  
-  validateReferralCode: (code) => 
-    api.post("/referrals/validate", { code }), // MISSING ENDPOINT
+    api.get("/referrals/stats"),
+
+  // ✅ Check or trigger promotion for a salesperson
+  checkReferralPromotion: (salesPersonId) => 
+    api.post(`/referrals/promotion/${salesPersonId}`),
 };
+
 
 // Teams APIs
 export const teamsAPI = {

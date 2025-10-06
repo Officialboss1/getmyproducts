@@ -190,7 +190,7 @@ const SalespersonDashboard = ({ user }) => {
               <Statistic
                 title="Total Revenue"
                 value={data.progress?.monthly?.totalRevenue || 0}
-                prefix="$"
+                prefix="₦"
                 valueStyle={{ color: "#52c41a" }}
               />
             </Card>
@@ -281,7 +281,7 @@ const SalespersonDashboard = ({ user }) => {
                         title={`${sale.quantity_sold} units - ${productName}`}
                         description={new Date(sale.createdAt).toLocaleDateString()}
                       />
-                      <Tag color="blue">${sale.total_amount}</Tag>
+                      <Tag color="blue">₦{sale.total_amount}</Tag>
                     </List.Item>
                   );
                 }}

@@ -157,7 +157,7 @@ const SalesHistory = () => {
       key: 'amount',
       align: 'right',
       render: (amount) => (
-        <Text strong>${amount?.toLocaleString()}</Text>
+        <Text strong>₦{amount?.toLocaleString()}</Text>
       ),
       sorter: (a, b) => (a.total_amount || 0) - (b.total_amount || 0),
     },
@@ -261,7 +261,7 @@ const SalesHistory = () => {
             <Statistic
               title="Total Revenue"
               value={stats.totalRevenue}
-              prefix="$"
+              prefix="₦"
               valueStyle={{ color: '#52c41a' }}
             />
           </Card>

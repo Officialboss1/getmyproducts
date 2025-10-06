@@ -2,6 +2,7 @@ import React from "react";
 import { ConfigProvider } from "antd";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
+import RegisterPage from "./pages/RegisterPage";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 
@@ -25,6 +26,7 @@ const App = () => {
         <Routes>
           {/* Public login route */}
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
 
           {/* All protected routes use DashboardPage for layout */}
           <Route
