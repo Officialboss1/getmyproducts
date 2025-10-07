@@ -27,7 +27,7 @@ import {
 } from '@ant-design/icons';
 import { adminAPI } from '../../services/adminApi';
 
-const { Title, Text } = Typography;
+const {   Text, Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { TabPane } = Tabs;
@@ -62,37 +62,7 @@ const Analytics = () => {
     }
   };
 
-  // Mock data
-  const mockAnalyticsData = {
-    totalSales: 12500,
-    totalRevenue: 2500000,
-    activeUsers: 45,
-    conversionRate: 23.5,
-    averageOrderValue: 200,
-    growthRate: 15.2,
-    teamPerformance: [
-      { team: 'North Region', sales: 3200, target: 3000, progress: 107 },
-      { team: 'South Region', sales: 2800, target: 3000, progress: 93 },
-      { team: 'East Region', sales: 3500, target: 3200, progress: 109 },
-      { team: 'West Region', sales: 3000, target: 2800, progress: 107 },
-    ],
-    topProducts: [
-      { product: 'iPhone 15', sales: 4500, revenue: 900000 },
-      { product: 'MacBook Air', sales: 2800, revenue: 4200000 },
-      { product: 'Apple Watch', sales: 3200, revenue: 1280000 },
-      { product: 'iPad Pro', sales: 2000, revenue: 1800000 },
-    ],
-    salesTrend: [
-      { month: 'Jan', sales: 1200 },
-      { month: 'Feb', sales: 1800 },
-      { month: 'Mar', sales: 1500 },
-      { month: 'Apr', sales: 2200 },
-      { month: 'May', sales: 2800 },
-      { month: 'Jun', sales: 3200 },
-    ],
-  };
-
-  const data = analyticsData || mockAnalyticsData;
+  const data = analyticsData || {};
 
   const teamPerformanceColumns = [
     {
@@ -104,13 +74,13 @@ const Analytics = () => {
       title: 'Sales',
       dataIndex: 'sales',
       key: 'sales',
-      render: (sales) => <Text strong>{sales.toLocaleString()}</Text>,
+      render: (sales) => <Text strong>{sales?.toLocaleString() || 0}</Text>,
     },
     {
       title: 'Target',
       dataIndex: 'target',
       key: 'target',
-      render: (target) => <Text>{target.toLocaleString()}</Text>,
+      render: (target) => <Text>{target?.toLocaleString() || 0}</Text>,
     },
     {
       title: 'Progress',
@@ -118,12 +88,12 @@ const Analytics = () => {
       render: (_, record) => (
         <Space direction="vertical" style={{ width: 150 }}>
           <Progress 
-            percent={Math.min(100, record.progress)} 
+            percent={Math.min(100, record.progress || 0)} 
             status={record.progress >= 100 ? 'success' : 'active'}
             size="small"
           />
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.progress}%
+            {record.progress || 0}%
           </Text>
         </Space>
       ),
@@ -149,18 +119,18 @@ const Analytics = () => {
       title: 'Units Sold',
       dataIndex: 'sales',
       key: 'sales',
-      render: (sales) => <Text strong>{sales.toLocaleString()}</Text>,
+      render: (sales) => <Text strong>{sales?.toLocaleString() || 0}</Text>,
     },
     {
       title: 'Revenue',
       dataIndex: 'revenue',
       key: 'revenue',
-      render: (revenue) => <Text type="success">${revenue.toLocaleString()}</Text>,
+      render: (revenue) => <Text type="success">${revenue?.toLocaleString() || 0}</Text>,
     },
     {
       title: 'Performance',
       key: 'performance',
-      render: (_, record, index) => (
+      render: (_, __, index) => (
         <Tag color={index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : 'default'}>
           #{index + 1}
         </Tag>
@@ -243,7 +213,7 @@ const Analytics = () => {
           <Card>
             <Statistic
               title="Total Sales"
-              value={data.totalSales}
+              value={data.totalSales || 0}
               prefix={<ShoppingCartOutlined />}
               valueStyle={{ color: '#1890ff' }}
               suffix="units"
@@ -254,24 +224,25 @@ const Analytics = () => {
           <Card>
             <Statistic
               title="Total Revenue"
-              value={data.totalRevenue}
+              value={data.totalRevenue || 0}
               prefix={<DollarOutlined />}
               valueStyle={{ color: '#52c41a' }}
-            //   prefix="$"
             />
-            <div style={{ marginTop: 8 }}>
-              <Text type={data.growthRate > 0 ? 'success' : 'danger'}>
-                {data.growthRate > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                {Math.abs(data.growthRate)}% from last period
-              </Text>
-            </div>
+            {data.growthRate != null && (
+              <div style={{ marginTop: 8 }}>
+                <Text type={data.growthRate > 0 ? 'success' : 'danger'}>
+                  {data.growthRate > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                  {Math.abs(data.growthRate)}% from last period
+                </Text>
+              </div>
+            )}
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card>
             <Statistic
               title="Active Sales Team"
-              value={data.activeUsers}
+              value={data.activeUsers || 0}
               prefix={<TeamOutlined />}
               valueStyle={{ color: '#722ed1' }}
             />
@@ -284,7 +255,7 @@ const Analytics = () => {
           <Card>
             <Statistic
               title="Conversion Rate"
-              value={data.conversionRate}
+              value={data.conversionRate || 0}
               suffix="%"
               valueStyle={{ color: '#faad14' }}
             />
@@ -294,7 +265,7 @@ const Analytics = () => {
           <Card>
             <Statistic
               title="Avg Order Value"
-              value={data.averageOrderValue}
+              value={data.averageOrderValue || 0}
               prefix="$"
               valueStyle={{ color: '#13c2c2' }}
             />
@@ -304,7 +275,7 @@ const Analytics = () => {
           <Card>
             <Statistic
               title="Target Achievement"
-              value={85}
+              value={data.targetAchievement || 0}
               suffix="%"
               valueStyle={{ color: '#eb2f96' }}
             />
@@ -314,7 +285,7 @@ const Analytics = () => {
           <Card>
             <Statistic
               title="Active Competitions"
-              value={6}
+              value={data.activeCompetitions || 0}
               prefix={<TrophyOutlined />}
               valueStyle={{ color: '#722ed1' }}
             />
@@ -327,9 +298,10 @@ const Analytics = () => {
           <Card>
             <Table
               columns={teamPerformanceColumns}
-              dataSource={data.teamPerformance}
+              dataSource={data.teamPerformance || []}
               pagination={false}
               loading={loading}
+              rowKey="team"
             />
           </Card>
         </TabPane>
@@ -338,9 +310,10 @@ const Analytics = () => {
           <Card>
             <Table
               columns={productColumns}
-              dataSource={data.topProducts}
+              dataSource={data.topProducts || []}
               pagination={false}
               loading={loading}
+              rowKey="product"
             />
           </Card>
         </TabPane>
@@ -358,11 +331,15 @@ const Analytics = () => {
               <div style={{ marginTop: 16 }}>
                 <Text strong>Recent Months Performance:</Text>
                 <div style={{ marginTop: 8 }}>
-                  {data.salesTrend.map((item, index) => (
-                    <Tag key={index} color="blue" style={{ margin: '4px' }}>
-                      {item.month}: {item.sales} units
-                    </Tag>
-                  ))}
+                  {data.salesTrend && data.salesTrend.length > 0 ? (
+                    data.salesTrend.map(item => (
+                      <Tag key={item.month} color="blue" style={{ margin: '4px' }}>
+                        {item.month}: {item.sales} units
+                      </Tag>
+                    ))
+                  ) : (
+                    <Text type="secondary">No sales trend data available</Text>
+                  )}
                 </div>
               </div>
             </div>

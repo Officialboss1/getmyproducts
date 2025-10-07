@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   Card,
@@ -15,6 +15,7 @@ import {
   Tooltip,
   Badge,
 } from 'antd';
+import { superAdminAPI } from '../../services/superAdminApi';
 import {
   SearchOutlined,
   FilterOutlined,
@@ -33,66 +34,44 @@ const SalespersonsManagement = () => {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [teamFilter, setTeamFilter] = useState('all');
+  const [salespersons, setSalespersons] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Mock data - replace with actual API call
-  const salespersons = [
-    {
-      id: '1',
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@company.com',
-      phone: '+1 (555) 123-4567',
-      status: 'active',
-      team: 'North Region',
-      admin: 'Sarah Wilson',
-      joinDate: '2024-01-15',
-      totalSales: 245,
-      monthlyTarget: 900,
-      performance: 85,
-      isTeamHead: true,
-      lastActive: '2025-10-02',
-    },
-    {
-      id: '2',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      email: 'jane.smith@company.com',
-      phone: '+1 (555) 987-6543',
-      status: 'active',
-      team: 'South Region',
-      admin: 'Mike Johnson',
-      joinDate: '2024-02-20',
-      totalSales: 189,
-      monthlyTarget: 900,
-      performance: 65,
-      isTeamHead: false,
-      lastActive: '2025-10-01',
-    },
-    {
-      id: '3',
-      firstName: 'Mike',
-      lastName: 'Johnson',
-      email: 'mike.johnson@company.com',
-      phone: '+1 (555) 456-7890',
-      status: 'inactive',
-      team: 'East Region',
-      admin: 'Sarah Wilson',
-      joinDate: '2024-03-10',
-      totalSales: 0,
-      monthlyTarget: 900,
-      performance: 0,
-      isTeamHead: false,
-      lastActive: '2025-09-15',
-    },
-  ];
+  useEffect(() => {
+    fetchSalespersons();
+  }, []);
 
+  const fetchSalespersons = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await superAdminAPI.getAllSalespersons();
+      const payload = res?.data || res || [];
+      const allUsers = Array.isArray(payload) ? payload : payload.items || [];
+
+      // Filter only users with role 'salesperson'
+      const salesUsers = allUsers.filter(user => (user.role || '').toLowerCase() === 'salesperson');
+      setSalespersons(salesUsers);
+    } catch (err) {
+      console.error('Error fetching salespersons', err);
+      setError(err?.message || 'Failed to load salespersons');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Statistics
   const stats = {
     total: salespersons.length,
     active: salespersons.filter(sp => sp.status === 'active').length,
     teamHeads: salespersons.filter(sp => sp.isTeamHead).length,
-    averagePerformance: Math.round(salespersons.reduce((acc, sp) => acc + sp.performance, 0) / salespersons.length),
+    averagePerformance: salespersons.length
+      ? Math.round(salespersons.reduce((acc, sp) => acc + (sp.performance || 0), 0) / salespersons.length)
+      : 0,
   };
 
+  // Filtered data
   const filteredSalespersons = salespersons.filter(sp =>
     (sp.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
      sp.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -104,9 +83,8 @@ const SalespersonsManagement = () => {
   const columns = [
     {
       title: 'Salesperson',
-      dataIndex: 'firstName',
       key: 'name',
-      render: (text, record) => (
+      render: (_, record) => (
         <Space>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
             {record.firstName?.[0]}{record.lastName?.[0]}
@@ -135,7 +113,7 @@ const SalespersonsManagement = () => {
       render: (phone) => (
         <Space>
           <PhoneOutlined />
-          <Text>{phone}</Text>
+          <Text>{phone || 'Not set'}</Text>
         </Space>
       ),
     },
@@ -144,9 +122,9 @@ const SalespersonsManagement = () => {
       key: 'team',
       render: (_, record) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{record.team}</Text>
+          <Text strong>{record.team || 'N/A'}</Text>
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            Managed by: {record.admin}
+            Managed by: {record.admin || 'N/A'}
           </Text>
         </Space>
       ),
@@ -156,10 +134,7 @@ const SalespersonsManagement = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge 
-          status={status === 'active' ? 'success' : 'default'} 
-          text={status.toUpperCase()}
-        />
+        <Badge status={status === 'active' ? 'success' : 'default'} text={status?.toUpperCase() || 'N/A'} />
       ),
     },
     {
@@ -167,13 +142,13 @@ const SalespersonsManagement = () => {
       key: 'performance',
       render: (_, record) => (
         <Space direction="vertical" style={{ width: 150 }}>
-          <Progress 
-            percent={record.performance} 
-            size="small" 
+          <Progress
+            percent={record.performance || 0}
+            size="small"
             status={record.performance >= 80 ? 'success' : record.performance >= 60 ? 'active' : 'exception'}
           />
           <Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.totalSales} sales
+            {record.totalSales || 0} sales
           </Text>
         </Space>
       ),
@@ -183,9 +158,7 @@ const SalespersonsManagement = () => {
       dataIndex: 'lastActive',
       key: 'lastActive',
       render: (date) => (
-        <Text type="secondary">
-          {new Date(date).toLocaleDateString()}
-        </Text>
+        <Text type="secondary">{date ? new Date(date).toLocaleDateString() : 'Never'}</Text>
       ),
     },
     {
@@ -218,6 +191,11 @@ const SalespersonsManagement = () => {
       </Row>
 
       {/* Statistics */}
+      {error && (
+        <Card style={{ marginBottom: 16 }}>
+          <Text type="danger">{error}</Text>
+        </Card>
+      )}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
           <Card>
@@ -231,11 +209,7 @@ const SalespersonsManagement = () => {
         </Col>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic
-              title="Active"
-              value={stats.active}
-              valueStyle={{ color: '#52c41a' }}
-            />
+            <Statistic title="Active" value={stats.active} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
@@ -314,9 +288,9 @@ const SalespersonsManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} of ${total} salespersons`,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} salespersons`,
           }}
+          loading={loading}
         />
       </Card>
     </div>

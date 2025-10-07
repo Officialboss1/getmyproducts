@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Table,
   Card,
@@ -14,15 +14,14 @@ import {
   Tooltip,
   Badge,
   Descriptions,
+  Modal,
 } from 'antd';
+import { superAdminAPI } from '../../services/superAdminApi';
 import {
   SearchOutlined,
   UserOutlined,
   MailOutlined,
   PhoneOutlined,
-  EnvironmentOutlined,
-  ShoppingOutlined,
-  CalendarOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
 
@@ -34,72 +33,51 @@ const CustomersManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Mock data - replace with actual API call
-  const customers = [
-    {
-      id: '1',
-      firstName: 'Alice',
-      lastName: 'Johnson',
-      email: 'alice.johnson@example.com',
-      phone: '+1 (555) 123-4567',
-      company: 'TechCorp Inc.',
-      position: 'Procurement Manager',
-      status: 'active',
-      totalOrders: 15,
-      totalSpent: 45000,
-      lastOrder: '2025-10-01',
-      joinDate: '2024-01-15',
-      address: '123 Business Ave, New York, NY 10001',
-      notes: 'VIP customer - prefers email communication',
-    },
-    {
-      id: '2',
-      firstName: 'Bob',
-      lastName: 'Smith',
-      email: 'bob.smith@example.com',
-      phone: '+1 (555) 987-6543',
-      company: 'Global Solutions Ltd.',
-      position: 'Director of Operations',
-      status: 'active',
-      totalOrders: 8,
-      totalSpent: 22000,
-      lastOrder: '2025-09-28',
-      joinDate: '2024-02-20',
-      address: '456 Corporate Blvd, Chicago, IL 60601',
-      notes: 'Interested in bulk orders',
-    },
-    {
-      id: '3',
-      firstName: 'Carol',
-      lastName: 'Williams',
-      email: 'carol.williams@example.com',
-      phone: '+1 (555) 456-7890',
-      company: 'StartUp Innovations',
-      position: 'CEO',
-      status: 'inactive',
-      totalOrders: 3,
-      totalSpent: 7500,
-      lastOrder: '2025-08-15',
-      joinDate: '2024-03-10',
-      address: '789 Enterprise St, San Francisco, CA 94102',
-      notes: 'No recent activity - follow up needed',
-    },
-  ];
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
 
+  const fetchCustomers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await superAdminAPI.getAllCustomers();
+      const payload = res?.data || res || [];
+      const allUsers = Array.isArray(payload) ? payload : payload.items || [];
+      
+      // Filter only users with role 'customer'
+      const customerUsers = allUsers.filter(user => (user.role || '').toLowerCase() === 'customer');
+      setCustomers(customerUsers);
+    } catch (err) {
+      console.error('Error fetching customers', err);
+      setError(err?.message || 'Failed to load customers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Statistics
   const stats = {
     total: customers.length,
     active: customers.filter(c => c.status === 'active').length,
-    totalRevenue: customers.reduce((acc, c) => acc + c.totalSpent, 0),
-    averageOrderValue: Math.round(customers.reduce((acc, c) => acc + c.totalSpent, 0) / customers.reduce((acc, c) => acc + c.totalOrders, 0)),
+    totalRevenue: customers.reduce((acc, c) => acc + (c.totalSpent || 0), 0),
+    averageOrderValue: (() => {
+      const totalOrders = customers.reduce((acc, c) => acc + (c.totalOrders || 0), 0);
+      return totalOrders ? Math.round(customers.reduce((acc, c) => acc + (c.totalSpent || 0), 0) / totalOrders) : 0;
+    })(),
   };
 
-  const filteredCustomers = customers.filter(customer =>
-    (customer.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-     customer.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-     customer.email?.toLowerCase().includes(searchText.toLowerCase()) ||
-     customer.company?.toLowerCase().includes(searchText.toLowerCase())) &&
-    (statusFilter === 'all' || customer.status === statusFilter)
+  // Filtered customers
+  const filteredCustomers = customers.filter(c =>
+    (c.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+     c.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+     c.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+     c.company?.toLowerCase().includes(searchText.toLowerCase())) &&
+    (statusFilter === 'all' || c.status === statusFilter)
   );
 
   const showCustomerDetails = (customer) => {
@@ -110,9 +88,8 @@ const CustomersManagement = () => {
   const columns = [
     {
       title: 'Customer',
-      dataIndex: 'firstName',
       key: 'name',
-      render: (text, record) => (
+      render: (_, record) => (
         <Space>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#13c2c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
             {record.firstName?.[0]}{record.lastName?.[0]}
@@ -132,10 +109,8 @@ const CustomersManagement = () => {
       key: 'company',
       render: (_, record) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{record.company}</Text>
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.position}
-          </Text>
+          <Text strong>{record.company || 'N/A'}</Text>
+          <Text type="secondary" style={{ fontSize: '12px' }}>{record.position || 'N/A'}</Text>
         </Space>
       ),
     },
@@ -146,7 +121,7 @@ const CustomersManagement = () => {
       render: (phone) => (
         <Space>
           <PhoneOutlined />
-          <Text>{phone}</Text>
+          <Text>{phone || 'Not set'}</Text>
         </Space>
       ),
     },
@@ -155,10 +130,7 @@ const CustomersManagement = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge 
-          status={status === 'active' ? 'success' : 'default'} 
-          text={status.toUpperCase()}
-        />
+        <Badge status={status === 'active' ? 'success' : 'default'} text={status?.toUpperCase() || 'N/A'} />
       ),
     },
     {
@@ -166,9 +138,9 @@ const CustomersManagement = () => {
       key: 'orders',
       render: (_, record) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{record.totalOrders} orders</Text>
+          <Text strong>{record.totalOrders || 0} orders</Text>
           <Text type="success" style={{ fontSize: '12px' }}>
-            ${record.totalSpent?.toLocaleString()}
+            ${record.totalSpent?.toLocaleString() || 0}
           </Text>
         </Space>
       ),
@@ -178,9 +150,7 @@ const CustomersManagement = () => {
       dataIndex: 'lastOrder',
       key: 'lastOrder',
       render: (date) => (
-        <Text type="secondary">
-          {date ? new Date(date).toLocaleDateString() : 'Never'}
-        </Text>
+        <Text type="secondary">{date ? new Date(date).toLocaleDateString() : 'Never'}</Text>
       ),
     },
     {
@@ -189,11 +159,7 @@ const CustomersManagement = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
-            <Button 
-              type="link" 
-              icon={<EyeOutlined />}
-              onClick={() => showCustomerDetails(record)}
-            />
+            <Button type="link" icon={<EyeOutlined />} onClick={() => showCustomerDetails(record)} />
           </Tooltip>
           <Tooltip title="Contact Customer">
             <Button type="link" icon={<MailOutlined />} />
@@ -210,51 +176,31 @@ const CustomersManagement = () => {
           <Title level={2} style={{ margin: 0 }}>
             <UserOutlined /> Customers Management
           </Title>
-          <Text type="secondary">
-            Manage all customer accounts and relationships
-          </Text>
+          <Text type="secondary">Manage all customer accounts and relationships</Text>
         </Col>
       </Row>
 
       {/* Statistics */}
+      {error && <Card style={{ marginBottom: 16 }}><Text type="danger">{error}</Text></Card>}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic
-              title="Total Customers"
-              value={stats.total}
-              prefix={<UserOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
+            <Statistic title="Total Customers" value={stats.total} prefix={<UserOutlined />} valueStyle={{ color: '#1890ff' }} />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic
-              title="Active Customers"
-              value={stats.active}
-              valueStyle={{ color: '#52c41a' }}
-            />
+            <Statistic title="Active Customers" value={stats.active} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic
-              title="Total Revenue"
-              value={stats.totalRevenue}
-              prefix="$"
-              valueStyle={{ color: '#faad14' }}
-            />
+            <Statistic title="Total Revenue" value={stats.totalRevenue} prefix="$" valueStyle={{ color: '#faad14' }} />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic
-              title="Avg Order Value"
-              value={stats.averageOrderValue}
-              prefix="$"
-              valueStyle={{ color: '#722ed1' }}
-            />
+            <Statistic title="Avg Order Value" value={stats.averageOrderValue} prefix="$" valueStyle={{ color: '#722ed1' }} />
           </Card>
         </Col>
       </Row>
@@ -283,9 +229,7 @@ const CustomersManagement = () => {
             </Select>
           </Col>
           <Col xs={24} md={6}>
-            <Button type="primary" icon={<SearchOutlined />} style={{ width: '100%' }}>
-              Search
-            </Button>
+            <Button type="primary" icon={<SearchOutlined />} style={{ width: '100%' }}>Search</Button>
           </Col>
         </Row>
       </Card>
@@ -299,9 +243,9 @@ const CustomersManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} of ${total} customers`,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} customers`,
           }}
+          loading={loading}
         />
       </Card>
 
@@ -311,9 +255,7 @@ const CustomersManagement = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>
-            Close
-          </Button>,
+          <Button key="close" onClick={() => setDetailModalVisible(false)}>Close</Button>,
         ]}
         width={700}
       >
@@ -322,41 +264,27 @@ const CustomersManagement = () => {
             <Descriptions.Item label="Full Name" span={2}>
               {selectedCustomer.firstName} {selectedCustomer.lastName}
             </Descriptions.Item>
-            <Descriptions.Item label="Email">
-              {selectedCustomer.email}
-            </Descriptions.Item>
-            <Descriptions.Item label="Phone">
-              {selectedCustomer.phone}
-            </Descriptions.Item>
-            <Descriptions.Item label="Company">
-              {selectedCustomer.company}
-            </Descriptions.Item>
-            <Descriptions.Item label="Position">
-              {selectedCustomer.position}
-            </Descriptions.Item>
+            <Descriptions.Item label="Email">{selectedCustomer.email}</Descriptions.Item>
+            <Descriptions.Item label="Phone">{selectedCustomer.phone || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Company">{selectedCustomer.company || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Position">{selectedCustomer.position || 'N/A'}</Descriptions.Item>
             <Descriptions.Item label="Status">
               <Tag color={selectedCustomer.status === 'active' ? 'green' : 'red'}>
-                {selectedCustomer.status.toUpperCase()}
+                {selectedCustomer.status?.toUpperCase() || 'N/A'}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Total Orders">
-              {selectedCustomer.totalOrders}
-            </Descriptions.Item>
+            <Descriptions.Item label="Total Orders">{selectedCustomer.totalOrders || 0}</Descriptions.Item>
             <Descriptions.Item label="Total Spent">
-              <Text strong>${selectedCustomer.totalSpent?.toLocaleString()}</Text>
+              <Text strong>${selectedCustomer.totalSpent?.toLocaleString() || 0}</Text>
             </Descriptions.Item>
             <Descriptions.Item label="Last Order">
               {selectedCustomer.lastOrder ? new Date(selectedCustomer.lastOrder).toLocaleDateString() : 'Never'}
             </Descriptions.Item>
             <Descriptions.Item label="Member Since">
-              {new Date(selectedCustomer.joinDate).toLocaleDateString()}
+              {selectedCustomer.joinDate ? new Date(selectedCustomer.joinDate).toLocaleDateString() : 'N/A'}
             </Descriptions.Item>
-            <Descriptions.Item label="Address" span={2}>
-              {selectedCustomer.address}
-            </Descriptions.Item>
-            <Descriptions.Item label="Notes" span={2}>
-              {selectedCustomer.notes}
-            </Descriptions.Item>
+            <Descriptions.Item label="Address" span={2}>{selectedCustomer.address || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Notes" span={2}>{selectedCustomer.notes || 'N/A'}</Descriptions.Item>
           </Descriptions>
         )}
       </Modal>

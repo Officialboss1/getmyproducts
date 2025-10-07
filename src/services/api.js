@@ -211,11 +211,16 @@ export const analyticsAPI = {
     return api.get(`${url}?period=${period}`);
   },
 
-  getLeaderboard: (period = 'monthly') =>
-    api.get(`/analytics/leaderboard?period=${period}`),
+  getLeaderboard: (period = 'monthly') => {
+    // Accept either a string period ('monthly') or an object of params { period: 'weekly', userId }
+    if (typeof period === 'object' && period !== null) {
+      return api.get('/analytics/leaderboard', { params: period });
+    }
+    return api.get(`/analytics/leaderboard?period=${period}`);
+  },
 
   getDailySales: () =>
-    api.get(`/analytics/daily`),
+    api.get(`/analytics/daily-sales`),
 
 
   getPerformanceTrend: (userId = "", period = "monthly") => {
@@ -239,25 +244,25 @@ export const competitionsAPI = {
     api.get("/competitions", { params }),
   
   getCompetitionById: (competitionId) => 
-    api.get(`/competitions/${competitionId}`),
+    api.get(`/competitions/${apiUtils.sanitizePathId(competitionId)}`),
   
   createCompetition: (competitionData) => 
     api.post("/competitions", competitionData),
   
   updateCompetition: (competitionId, competitionData) => 
-    api.put(`/competitions/${competitionId}`, competitionData),
+    api.put(`/competitions/${apiUtils.sanitizePathId(competitionId)}`, competitionData),
   
   deleteCompetition: (competitionId) => 
-    api.delete(`/competitions/${competitionId}`),
+    api.delete(`/competitions/${apiUtils.sanitizePathId(competitionId)}`),
   
   joinCompetition: (competitionId) => 
-    api.post(`/competitions/${competitionId}/join`),
+    api.post(`/competitions/${apiUtils.sanitizePathId(competitionId)}/join`),
   
   leaveCompetition: (competitionId) => 
-    api.post(`/competitions/${competitionId}/leave`),
+    api.post(`/competitions/${apiUtils.sanitizePathId(competitionId)}/leave`),
   
   getCompetitionLeaderboard: (competitionId) => 
-    api.get(`/competitions/${competitionId}/leaderboard`),
+    api.get(`/competitions/${apiUtils.sanitizePathId(competitionId)}/leaderboard`),
   
   getMyCompetitions: () => 
     api.get("/competitions/my-competitions"),
@@ -282,16 +287,16 @@ export const auditAPI = {
 // Referrals APIs
 export const referralsAPI = {
   getMyReferrals: () => 
-    api.get("/referrals/my-referrals"), // MISSING ENDPOINT
-  
+    api.get("/referrals/my-referrals"), 
   getReferralProgress: () => 
-    api.get("/referrals/progress"), // MISSING ENDPOINT
-  
+    api.get("/referrals/progress"), 
   createReferral: (referralData) => 
-    api.post("/referrals", referralData), // MISSING ENDPOINT
-  
+    api.post("/referrals", referralData), 
+  getReferralLink: () => 
+    api.get("/referrals/link"),
+
   getReferralStats: () => 
-    api.get("/referrals/stats"), // MISSING ENDPOINT
+    api.get("/referrals/stats"), 
   
   validateReferralCode: (code) => 
     api.post("/referrals/validate", { code }), // MISSING ENDPOINT
@@ -383,6 +388,17 @@ export const apiUtils = {
   hasAnyRole: (requiredRoles) => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     return requiredRoles.includes(user.role);
+  },
+  // Sanitize path IDs before inserting into URL paths (trim and encode)
+  sanitizePathId: (id) => {
+    if (id === undefined || id === null) return id;
+    try {
+      // convert to string and trim whitespace/newlines
+      const s = String(id).trim();
+      return encodeURIComponent(s);
+    } catch {
+      return id;
+    }
   },
 };
 

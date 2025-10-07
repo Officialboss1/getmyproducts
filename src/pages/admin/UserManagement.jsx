@@ -54,8 +54,8 @@ const UserManagement = () => {
     refetch: _refetch,
   } = useUsers('sales_person');
 
-  // Mock customers data
-  const customers = [
+  // Mock customers fallback (used if backend returns no customers)
+  const mockCustomers = [
     {
       id: '1',
       firstName: 'Alice',
@@ -206,7 +206,7 @@ const UserManagement = () => {
     {
       title: 'Actions',
       key: 'actions',
-      render: (_, _record) => (
+      render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
             <Button type="link" icon={<EyeOutlined />} />
@@ -315,17 +315,27 @@ const UserManagement = () => {
     },
   ];
 
-  const filteredSalespersons = salespersons.filter(user =>
+  // Use users returned from backend. Filter by role (support both 'sales_person' and 'salesperson').
+  const allUsers = salespersons || [];
+
+  const salesTeam = allUsers.filter(u => {
+    const role = u.role || '';
+    return role === 'sales_person' || role === 'salesperson';
+  });
+
+  const customers = allUsers.filter(u => (u.role || '') === 'customer');
+
+  const filteredSalespersons = salesTeam.filter(user =>
     user.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
     user.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
     user.email?.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const filteredCustomers = customers.filter(customer =>
+  const filteredCustomers = (customers.length > 0 ? customers : mockCustomers).filter(customer =>
     customer.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
     customer.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
     customer.email?.toLowerCase().includes(searchText.toLowerCase()) ||
-    customer.company?.toLowerCase().includes(searchText.toLowerCase())
+    (customer.company || '').toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
@@ -366,7 +376,7 @@ const UserManagement = () => {
               columns={salespersonColumns}
               dataSource={filteredSalespersons}
               loading={loading}
-              rowKey="id"
+              rowKey={(record) => record.id || record._id}
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
@@ -380,7 +390,7 @@ const UserManagement = () => {
             <Table
               columns={customerColumns}
               dataSource={filteredCustomers}
-              rowKey="id"
+              rowKey={(record) => record.id || record._id}
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,

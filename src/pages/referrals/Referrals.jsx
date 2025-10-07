@@ -145,7 +145,7 @@ const Referrals = () => {
           <Card>
             <Statistic
               title="Bonus Earned"
-              value={referralStats?.yourBonus?.toFixed(2) || 0}
+              value={typeof referralStats?.yourBonus === 'number' ? referralStats.yourBonus.toFixed(2) : '0.00'}
               prefix="$"
               precision={2}
             />
@@ -164,27 +164,21 @@ const Referrals = () => {
                 <Text>Referrals Progress</Text>
                 <Progress
                   percent={
-                    Math.round(
-                      Math.min(
-                      100,
-                      (referralStats.progress?.referrals?.current /
-                        referralStats.progress?.referrals?.target) *
-                        100
-                    ) || 0
-                    )
+                    (() => {
+                      const current = referralStats?.progress?.referrals?.current || 0;
+                      const target = referralStats?.progress?.referrals?.target || 1;
+                      return Math.round(Math.min(100, (current / target) * 100));
+                    })()
                   }
                 />
                 <Text>Sales Progress</Text>
                 <Progress
                   percent={
-                   Math.round(
-                     Math.min(
-                      100,
-                      (referralStats.progress?.sales?.current /
-                        referralStats.progress?.sales?.target) *
-                        100
-                    ) || 0
-                   )
+                    (() => {
+                      const current = referralStats?.progress?.sales?.current || 0;
+                      const target = referralStats?.progress?.sales?.target || 1;
+                      return Math.round(Math.min(100, (current / target) * 100));
+                    })()
                   }
                   status="active"
                 />

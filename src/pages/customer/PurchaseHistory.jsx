@@ -226,7 +226,7 @@ const PurchaseHistory = ({ user }) => {
               value={stats.totalSpent}
               prefix={<DollarOutlined />}
               valueStyle={{ color: '#52c41a' }}
-            //   prefix="$"
+            //   prefix="₦"
             />
           </Card>
         </Col>
