@@ -99,28 +99,45 @@ export const authAPI = {
   getProfile: () => 
     api.get("/auth/profile"),
   
-  updateProfile: (userData) => 
+  updateProfile: (userData) =>
     api.put("/auth/profile", userData),
+
+  forgotPassword: (email) =>
+    api.post("/auth/forgot-password", { email }),
+
+  resetPassword: (token, newPassword) =>
+    api.post("/auth/reset-password", { token, newPassword }),
 };
 
 // Users & Roles APIs
 export const usersAPI = {
-  getAllUsers: (params = {}) => 
+  getAllUsers: (params = {}) =>
     api.get("/users", { params }),
-  
-  getUserById: (userId) => 
+
+  getUserById: (userId) =>
     api.get(`/users/${userId}`),
-  
-  updateUserRole: (userId, roleData) => 
+
+  getUserProfile: (userId) =>
+    api.get(`/users/${userId}/profile`),
+
+  updateUserProfile: (userId, formData) =>
+    api.put(`/users/${userId}/profile`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+  deleteAvatar: (userId) =>
+    api.delete(`/users/${userId}/avatar`),
+
+  updateUserRole: (userId, roleData) =>
     api.patch(`/users/${userId}/role`, roleData),
-  
-  updateUser: (userId, userData) => 
+
+  updateUser: (userId, userData) =>
     api.put(`/users/${userId}`, userData),
-  
-  deleteUser: (userId) => 
+
+  deleteUser: (userId) =>
     api.delete(`/users/${userId}`),
-  
-  getSalesTeam: () => 
+
+  getSalesTeam: () =>
     api.get("/users/team"),
 };
 

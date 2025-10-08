@@ -46,6 +46,10 @@ const SuperAdminDashboard = () => {
         superAdminAPI.getAllUsers(),
       ]);
 
+      console.log('Sales Summary Response:', summaryRes?.data);
+      console.log('Recent Activities Response:', activitiesRes?.data);
+      console.log('All Users Response:', usersRes?.data);
+
       const summaryData = summaryRes?.data || {};
       const activities = Array.isArray(activitiesRes?.data) ? activitiesRes.data : [];
       const users = Array.isArray(usersRes?.data) ? usersRes.data : [];
@@ -57,8 +61,10 @@ const SuperAdminDashboard = () => {
         totalAdmins: users.filter(u => u.role === 'admin').length,
         totalSalespersons: users.filter(u => u.role === 'salesperson').length,
         totalCustomers: users.filter(u => u.role === 'customer').length,
-        systemHealth: 98, // placeholder health metric
+        systemHealth: summaryData.systemHealth ?? 98,
       };
+
+      console.log('Processed Analytics:', analytics);
 
       setSummary(analytics);
       setRecentActivities(activities);
@@ -274,7 +280,7 @@ const SuperAdminDashboard = () => {
               <Table
                 columns={topPerformersColumns}
                 dataSource={data.topPerformers || []}
-                rowKey={(record, index) => record._id || `top-${index}`}
+                rowKey={(record) => record._id}
                 pagination={false}
                 size="small"
                 locale={{ emptyText: 'No performance data available' }}
@@ -300,7 +306,7 @@ const SuperAdminDashboard = () => {
               <Table
                 columns={activitiesColumns}
                 dataSource={recentActivities}
-                rowKey={(record, index) => record._id || `activity-${index}`}
+                rowKey={(record) => record._id}
                 pagination={false}
                 size="small"
                 locale={{ emptyText: 'No recent activities' }}

@@ -15,7 +15,7 @@ export const superAdminAPI = {
     const response = await api.get('/users', {
       params: { role: 'salesperson', ...params }
     });
-    let users = response.data;
+    let users = response.data.users || [];
     if (Array.isArray(users)) {
       if (params.sort === 'performance') {
         users = users.sort((a, b) => (b.performance || 0) - (a.performance || 0));
@@ -29,7 +29,7 @@ export const superAdminAPI = {
 
   getAllCustomers: async () => {
     const response = await api.get('/users', { params: { role: 'customer' } });
-    return { data: response.data.filter(user => user.role === 'customer') };
+    return { data: response.data.users || [] };
   },
 
   // Global Targets Management
@@ -68,7 +68,16 @@ export const superAdminAPI = {
   getSalesSummary: () => api.get('/sales/summary'),
 
   // 🆕 Recent Activities (Optional for Dashboard Feed)
-  getRecentActivities: () => api.get('/activities/recent')
+  getRecentActivities: () => api.get('/activities/recent'),
+
+  // Send message to user
+  sendMessage: (userId, messageData) => api.post(`/users/${userId}/message`, messageData),
+
+  // Update user (generic)
+  updateUser: (userId, updateData) => api.put(`/users/${userId}`, updateData),
+
+  // Delete user (generic)
+  deleteUser: (userId) => api.delete(`/users/${userId}`),
 };
 
 export default superAdminAPI;

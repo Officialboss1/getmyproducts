@@ -52,7 +52,7 @@ const AdminManagement = () => {
 
   const handleUpdateAdmin = async (values) => {
     try {
-      await updateAdmin(editingAdmin.id, values);
+      await updateAdmin(editingAdmin._id, values);
       message.success('Admin updated successfully!');
       setModalVisible(false);
       setEditingAdmin(null);
@@ -147,9 +147,8 @@ const AdminManagement = () => {
     },
     {
       title: 'Last Active',
-      dataIndex: 'lastActive',
       key: 'lastActive',
-      render: (date) => date ? new Date(date).toLocaleDateString() : <Text type="secondary">Never</Text>,
+      render: (_, record) => record.lastOrder ? new Date(record.lastOrder).toLocaleDateString() : <Text type="secondary">Never</Text>,
     },
     {
       title: 'Actions',
@@ -162,7 +161,7 @@ const AdminManagement = () => {
           <Popconfirm
             title="Delete Admin"
             description="Are you sure you want to delete this admin?"
-            onConfirm={() => handleDeleteAdmin(record.id)}
+            onConfirm={() => handleDeleteAdmin(record._id)}
             okText="Yes"
             cancelText="No"
           >
@@ -207,7 +206,7 @@ const AdminManagement = () => {
           columns={columns}
           dataSource={filteredAdmins}
           loading={loading}
-          rowKey="id"
+          rowKey="_id"
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -245,15 +244,19 @@ const AdminManagement = () => {
             <Input placeholder="Email address" prefix={<MailOutlined />} />
           </Form.Item>
 
+          <Form.Item label="Password" name="password" rules={[{ required: true, message: 'Please enter password' }, { min: 6, message: 'Password must be at least 6 characters' }]}>
+            <Input.Password placeholder="Password" />
+          </Form.Item>
+
           <Form.Item label="Phone" name="phone">
             <Input placeholder="Phone number" prefix={<PhoneOutlined />} />
           </Form.Item>
 
           <Form.Item label="Status" name="status" initialValue="active">
             <Select>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
-              <Option value="pending">Pending</Option>
+              <Option value="active" key="status-active">Active</Option>
+              <Option value="inactive" key="status-inactive">Inactive</Option>
+              <Option value="pending" key="status-pending">Pending</Option>
             </Select>
           </Form.Item>
 
