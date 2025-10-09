@@ -1,8 +1,7 @@
-# /.github/workflows/deploy.yml in your FRONTEND repository
+# /.github/workflows/deploy.yml
 
 name: Build and Deploy Frontend to Production
 
-# Triggers on a push to the 'main' branch
 on:
   push:
     branches:
@@ -12,30 +11,31 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout Repository
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: 🛠️ Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: 📦 Install Dependencies
         run: npm install
 
-      - name: Build Production Frontend
+      - name: 🏗️ Build Production Frontend
         run: npm run build
 
-      - name: Deploy to DreamHost via FTP
-        uses: samkirkland/ftp-deploy-action@v4.3.4
+      - name: 🚀 Deploy to FTP Server
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          # Source directory (the result of 'npm run build')
           local-dir: ./build/
-          # ❗️ IMPORTANT: Update this to your public web root directory
           server-dir: /home/silversp/salestracker.silverspringbank.com/Mike
+          protocol: ftp
+          port: 21
           dangerous-clean-slate: true
