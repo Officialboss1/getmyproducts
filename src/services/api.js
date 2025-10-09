@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: "https://salestrackerback.silverspringbank.com/", // Update if backend runs elsewhere
+  baseURL: "https://salestrackerback.silverspringbank.com/api", // Update if backend runs elsewhere
   timeout: 30000, // 30 seconds timeout
   headers: {
     "Content-Type": "application/json",
