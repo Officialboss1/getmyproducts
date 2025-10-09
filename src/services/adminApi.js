@@ -11,7 +11,7 @@ export const adminAPI = {
   /* ===============================
    * USER MANAGEMENT
    * =============================== */
-  getUsers: (role = "") => api.get("/users", { params: { role } }),
+  getUsers: (role = "", additionalParams = {}) => api.get("/users", { params: { role, ...additionalParams } }),
   getUserById: (userId) => api.get(`/users/${userId}`),
   createUser: (userData) => api.post("/users", userData),
   updateUser: (userId, updateData) => api.put(`/users/${userId}`, updateData),

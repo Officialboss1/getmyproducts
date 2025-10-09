@@ -150,7 +150,6 @@ const DashboardPage = () => {
             icon: <TeamOutlined />,
             children: [
               { key: "/salespersons", label: "Sales Team" },
-              { key: "/customers", label: "Customers" },
               { key: "/targets", label: "Targets" },
             ],
           },
