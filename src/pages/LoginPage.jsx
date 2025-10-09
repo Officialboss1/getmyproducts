@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Form, Input, Button, Card, Typography, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../utils/axios";
 
 const { Title } = Typography;
@@ -103,6 +103,12 @@ const LoginPage = () => {
             </Button>
           </Form.Item>
         </Form>
+
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <Link to="/forgot-password">
+            Forgot your password?
+          </Link>
+        </div>
       </Card>
     </div>
   );

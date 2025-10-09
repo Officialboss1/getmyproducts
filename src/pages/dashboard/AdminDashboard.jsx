@@ -323,7 +323,7 @@ const AdminDashboard = () => {
             {/* === KPI CARDS === */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
               {kpiCards.map((card, index) => (
-                <Col xs={24} sm={12} lg={8} xl={4} key={index}>
+                <Col xs={24} sm={12} lg={8} xl={4} key={`kpi-${card.title.toLowerCase().replace(/\s+/g, '-')}`}>
                   <Card>
                     <Statistic
                       title={card.title}

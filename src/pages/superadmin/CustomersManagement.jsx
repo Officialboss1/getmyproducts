@@ -23,6 +23,7 @@ import {
   MailOutlined,
   PhoneOutlined,
   EyeOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -33,6 +34,7 @@ const CustomersManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -83,6 +85,21 @@ const CustomersManagement = () => {
   const showCustomerDetails = (customer) => {
     setSelectedCustomer(customer);
     setDetailModalVisible(true);
+  };
+
+  const handleSendMessage = (customer) => {
+    setSelectedCustomer(customer);
+    setMessageModalVisible(true);
+  };
+
+  const handleSendMessageSubmit = async (values) => {
+    try {
+      await superAdminAPI.sendMessage(selectedCustomer._id, values);
+      message.success('Message sent successfully');
+      setMessageModalVisible(false);
+    } catch (error) {
+      message.error(error.message || 'Failed to send message');
+    }
   };
 
   const columns = [
@@ -162,7 +179,7 @@ const CustomersManagement = () => {
             <Button type="link" icon={<EyeOutlined />} onClick={() => showCustomerDetails(record)} />
           </Tooltip>
           <Tooltip title="Contact Customer">
-            <Button type="link" icon={<MailOutlined />} />
+            <Button type="link" icon={<MailOutlined />} onClick={() => handleSendMessage(record)} />
           </Tooltip>
         </Space>
       ),
@@ -223,9 +240,9 @@ const CustomersManagement = () => {
               value={statusFilter}
               onChange={setStatusFilter}
             >
-              <Option value="all">All Status</Option>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
+              <Option value="all" key="all-status">All Status</Option>
+              <Option value="active" key="active-status">Active</Option>
+              <Option value="inactive" key="inactive-status">Inactive</Option>
             </Select>
           </Col>
           <Col xs={24} md={6}>
@@ -239,7 +256,7 @@ const CustomersManagement = () => {
         <Table
           columns={columns}
           dataSource={filteredCustomers}
-          rowKey="id"
+          rowKey="_id"
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -287,6 +304,40 @@ const CustomersManagement = () => {
             <Descriptions.Item label="Notes" span={2}>{selectedCustomer.notes || 'N/A'}</Descriptions.Item>
           </Descriptions>
         )}
+      </Modal>
+
+      {/* Send Message Modal */}
+      <Modal
+        title={`Send Message to ${selectedCustomer?.firstName} ${selectedCustomer?.lastName}`}
+        open={messageModalVisible}
+        onCancel={() => setMessageModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setMessageModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button key="send" type="primary" onClick={() => {
+            // Create a simple form submission
+            const subject = document.querySelector('input[placeholder="Message subject"]').value;
+            const messageText = document.querySelector('textarea[placeholder="Type your message here..."]').value;
+            handleSendMessageSubmit({ subject, message: messageText });
+          }}>
+            <SendOutlined /> Send Message
+          </Button>,
+        ]}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <Input
+            placeholder="Message subject"
+            style={{ marginBottom: 16 }}
+          />
+          <Input.TextArea
+            rows={6}
+            placeholder="Type your message here..."
+          />
+          <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>
+            This message will be sent via email to {selectedCustomer?.email}
+          </Text>
+        </div>
       </Modal>
     </div>
   );

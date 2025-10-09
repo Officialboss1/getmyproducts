@@ -15,6 +15,7 @@ import {
   QuestionCircleOutlined,
 } from "@ant-design/icons";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useUser } from "../App";
 
 // Dashboards
 import SalespersonDashboard from "./dashboard/SalespersonDashboard";
@@ -61,43 +62,32 @@ const { Text } = Typography;
 
 const DashboardPage = () => {
   const [collapsed, setCollapsed] = useState(false);
-  const [role, setRole] = useState(null);
-  const [user, setUser] = useState(null);
+  const { user, logout } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
+
+  const role = user?.role;
 
   useEffect(() => {
     const validateAuth = () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("No token found");
-
-        const storedUser = localStorage.getItem("user");
-        if (!storedUser) throw new Error("No user data found");
-
-        const userData = JSON.parse(storedUser);
-        if (!userData || typeof userData !== 'object' || !userData.role || !userData._id) {
-          throw new Error("Invalid user data structure");
+        if (!token || !user) {
+          throw new Error("No token or user data found");
         }
-
-        setRole(userData.role);
-        setUser(userData);
       } catch (error) {
         console.error("Authentication validation failed:", error);
         message.error("Please log in to continue");
-        localStorage.removeItem("user");
-        localStorage.removeItem("token");
         navigate("/login", { replace: true });
       }
     };
-    validateAuth();
-  }, [navigate]);
+    if (user) validateAuth();
+  }, [navigate, user]);
 
   const toggleCollapse = () => setCollapsed(!collapsed);
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    logout();
     message.success("Logged out successfully");
     navigate("/login");
   };
@@ -189,6 +179,14 @@ const DashboardPage = () => {
     if (role === 'super_admin' && (location.pathname === '/dashboard' || location.pathname === '/')) return <SuperAdminDashboard user={user} />;
     if (role === 'admin' && (location.pathname === '/dashboard' || location.pathname === '/')) return <AdminDashboard user={user} />;
 
+    // Handle profile routes
+    if (location.pathname === "/profile") {
+      return <ProfilePage />;
+    } else if (location.pathname.startsWith("/profile/")) {
+      const userId = location.pathname.split("/")[2];
+      return <ProfilePage userId={userId} />;
+    }
+
     switch (location.pathname) {
       case "/sales/add": return <AddSale user={user} />;
       case "/sales/history": return <SalesHistory user={user} />;
@@ -196,7 +194,6 @@ const DashboardPage = () => {
       case "/admin-competitions": return (role === 'admin' || role === 'super_admin') ? <CompetitionsManagement user={user} /> : <AdminDashboard user={user} />;
       case "/referrals": return role === 'salesperson' ? <Referrals user={user} /> : <AdminDashboard user={user} />;
       case "/analytics": return role === 'admin' ? <Analytics user={user} /> : <AnalyticsTargets user={user} />;
-      case "/profile": return <ProfilePage user={user} />;
 
       // Super Admin routes
       case "/admins": return role === 'super_admin' ? <AdminManagement user={user} /> : <AdminDashboard user={user} />;
@@ -246,7 +243,10 @@ const DashboardPage = () => {
           </Button>
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" arrow>
             <Space style={{ cursor: 'pointer', padding: '8px' }}>
-              <Avatar icon={<UserOutlined />} />
+              <Avatar
+                icon={<UserOutlined />}
+                src={user?.avatar ? `http://localhost:5000/${user.avatar}` : undefined}
+              />
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <Text strong>{user?.firstName} {user?.lastName}</Text>
                 <Text type="secondary" style={{ fontSize: '12px' }}>{role?.replace('_', ' ').toUpperCase()}</Text>

@@ -14,6 +14,11 @@ import {
   Progress,
   Tooltip,
   Badge,
+  Modal,
+  Form,
+  message,
+  Popconfirm,
+  Divider,
 } from 'antd';
 import { superAdminAPI } from '../../services/superAdminApi';
 import {
@@ -25,6 +30,9 @@ import {
   TeamOutlined,
   UserOutlined,
   CrownOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -37,6 +45,16 @@ const SalespersonsManagement = () => {
   const [salespersons, setSalespersons] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Modal states
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [messageModalVisible, setMessageModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+
+  // Forms
+  const [detailsForm] = Form.useForm();
+  const [messageForm] = Form.useForm();
 
   useEffect(() => {
     fetchSalespersons();
@@ -61,13 +79,82 @@ const SalespersonsManagement = () => {
     }
   };
 
+  const handleViewDetails = (user) => {
+    setSelectedUser(user);
+    setEditingUser(null);
+    detailsForm.setFieldsValue({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+      status: user.status || 'active',
+    });
+    setDetailsModalVisible(true);
+  };
+
+  const handleEditUser = () => {
+    setEditingUser(selectedUser);
+    // Ensure form is populated with current values
+    detailsForm.setFieldsValue({
+      firstName: selectedUser.firstName,
+      lastName: selectedUser.lastName,
+      email: selectedUser.email,
+      phone: selectedUser.phone,
+      role: selectedUser.role,
+      status: selectedUser.status || 'active',
+    });
+  };
+
+  const handleUpdateUser = async (values) => {
+    try {
+      await superAdminAPI.updateUser(selectedUser._id, values);
+      message.success('User updated successfully');
+      setDetailsModalVisible(false);
+      setEditingUser(null);
+      fetchSalespersons(); // Refresh the list
+    } catch (error) {
+      message.error(error.message || 'Failed to update user');
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      await superAdminAPI.deleteUser(selectedUser._id);
+      message.success('User deleted successfully');
+      setDetailsModalVisible(false);
+      setSelectedUser(null);
+      fetchSalespersons(); // Refresh the list
+    } catch (error) {
+      message.error(error.message || 'Failed to delete user');
+    }
+  };
+
+  const handleSendMessage = (user) => {
+    setSelectedUser(user);
+    messageForm.resetFields();
+    setMessageModalVisible(true);
+  };
+
+  const handleSendMessageSubmit = async (values) => {
+    try {
+      // For now, we'll use a simple approach - you might want to add a backend endpoint for this
+      await superAdminAPI.sendMessage(selectedUser._id, values);
+      message.success('Message sent successfully');
+      setMessageModalVisible(false);
+      messageForm.resetFields();
+    } catch (error) {
+      message.error(error.message || 'Failed to send message');
+    }
+  };
+
   // Statistics
   const stats = {
     total: salespersons.length,
     active: salespersons.filter(sp => sp.status === 'active').length,
     teamHeads: salespersons.filter(sp => sp.isTeamHead).length,
     averagePerformance: salespersons.length
-      ? Math.round(salespersons.reduce((acc, sp) => acc + (sp.performance || 0), 0) / salespersons.length)
+      ? Math.round(salespersons.reduce((acc, sp) => acc + (sp.totalOrders || 0), 0) / salespersons.length)
       : 0,
   };
 
@@ -140,25 +227,28 @@ const SalespersonsManagement = () => {
     {
       title: 'Performance',
       key: 'performance',
-      render: (_, record) => (
-        <Space direction="vertical" style={{ width: 150 }}>
-          <Progress
-            percent={record.performance || 0}
-            size="small"
-            status={record.performance >= 80 ? 'success' : record.performance >= 60 ? 'active' : 'exception'}
-          />
-          <Text type="secondary" style={{ fontSize: '12px' }}>
-            {record.totalSales || 0} sales
-          </Text>
-        </Space>
-      ),
+      render: (_, record) => {
+        const totalSales = record.totalOrders || 0;
+        const performance = totalSales > 0 ? Math.min(100, (totalSales / 10) * 100) : 0; // Example: 10 sales = 100%
+        return (
+          <Space direction="vertical" style={{ width: 150 }}>
+            <Progress
+              percent={performance}
+              size="small"
+              status={performance >= 80 ? 'success' : performance >= 60 ? 'active' : 'exception'}
+            />
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {totalSales} sales
+            </Text>
+          </Space>
+        );
+      },
     },
     {
       title: 'Last Active',
-      dataIndex: 'lastActive',
       key: 'lastActive',
-      render: (date) => (
-        <Text type="secondary">{date ? new Date(date).toLocaleDateString() : 'Never'}</Text>
+      render: (_, record) => (
+        <Text type="secondary">{record.lastOrder ? new Date(record.lastOrder).toLocaleDateString() : 'Never'}</Text>
       ),
     },
     {
@@ -167,10 +257,10 @@ const SalespersonsManagement = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
-            <Button type="link" icon={<EyeOutlined />} />
+            <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewDetails(record)} />
           </Tooltip>
           <Tooltip title="Send Message">
-            <Button type="link" icon={<MailOutlined />} />
+            <Button type="link" icon={<MailOutlined />} onClick={() => handleSendMessage(record)} />
           </Tooltip>
         </Space>
       ),
@@ -197,7 +287,7 @@ const SalespersonsManagement = () => {
         </Card>
       )}
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={6}>
+        <Col xs={24} sm={6} key="total">
           <Card>
             <Statistic
               title="Total Salespersons"
@@ -207,12 +297,12 @@ const SalespersonsManagement = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={6}>
+        <Col xs={24} sm={6} key="active">
           <Card>
             <Statistic title="Active" value={stats.active} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
-        <Col xs={24} sm={6}>
+        <Col xs={24} sm={6} key="teamHeads">
           <Card>
             <Statistic
               title="Team Heads"
@@ -222,7 +312,7 @@ const SalespersonsManagement = () => {
             />
           </Card>
         </Col>
-        <Col xs={24} sm={6}>
+        <Col xs={24} sm={6} key="performance">
           <Card>
             <Statistic
               title="Avg Performance"
@@ -252,9 +342,9 @@ const SalespersonsManagement = () => {
               value={statusFilter}
               onChange={setStatusFilter}
             >
-              <Option value="all">All Status</Option>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
+              <Option value="all" key="all-status">All Status</Option>
+              <Option value="active" key="active-status">Active</Option>
+              <Option value="inactive" key="inactive-status">Inactive</Option>
             </Select>
           </Col>
           <Col xs={24} md={6}>
@@ -264,11 +354,11 @@ const SalespersonsManagement = () => {
               value={teamFilter}
               onChange={setTeamFilter}
             >
-              <Option value="all">All Teams</Option>
-              <Option value="North Region">North Region</Option>
-              <Option value="South Region">South Region</Option>
-              <Option value="East Region">East Region</Option>
-              <Option value="West Region">West Region</Option>
+              <Option value="all" key="all-teams">All Teams</Option>
+              <Option value="North Region" key="north-region">North Region</Option>
+              <Option value="South Region" key="south-region">South Region</Option>
+              <Option value="East Region" key="east-region">East Region</Option>
+              <Option value="West Region" key="west-region">West Region</Option>
             </Select>
           </Col>
           <Col xs={24} md={4}>
@@ -284,7 +374,7 @@ const SalespersonsManagement = () => {
         <Table
           columns={columns}
           dataSource={filteredSalespersons}
-          rowKey="id"
+          rowKey="_id"
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
@@ -293,6 +383,163 @@ const SalespersonsManagement = () => {
           loading={loading}
         />
       </Card>
+
+      {/* User Details Modal */}
+      <Modal
+        title="User Details & Management"
+        open={detailsModalVisible}
+        onCancel={() => setDetailsModalVisible(false)}
+        width={800}
+        footer={[
+          <Button key="cancel" onClick={() => setDetailsModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Popconfirm
+            title="Delete User"
+            description="Are you sure you want to delete this user? This action cannot be undone."
+            onConfirm={handleDeleteUser}
+            okText="Yes, Delete"
+            cancelText="Cancel"
+          >
+            <Button key="delete" danger>
+              Delete User
+            </Button>
+          </Popconfirm>,
+          editingUser ? (
+            <Button key="save" type="primary" onClick={() => detailsForm.submit()}>
+              Save Changes
+            </Button>
+          ) : (
+            <Button key="edit" type="primary" onClick={handleEditUser}>
+              Edit User
+            </Button>
+          ),
+        ]}
+      >
+        {selectedUser && (
+          <div>
+            {/* User Info Display */}
+            <Row gutter={16} style={{ marginBottom: 24 }}>
+              <Col span={12}>
+                <Card size="small" title="Basic Information">
+                  <p><strong>Name:</strong> {selectedUser.firstName} {selectedUser.lastName}</p>
+                  <p><strong>Email:</strong> {selectedUser.email}</p>
+                  <p><strong>Role:</strong> {selectedUser.role}</p>
+                  <p><strong>Phone:</strong> {selectedUser.phone || 'Not set'}</p>
+                  <p><strong>Status:</strong> {selectedUser.status || 'active'}</p>
+                </Card>
+              </Col>
+              <Col span={12}>
+                <Card size="small" title="Performance Stats">
+                  <p><strong>Total Sales:</strong> {selectedUser.totalOrders || 0}</p>
+                  <p><strong>Total Revenue:</strong> ${selectedUser.totalSpent?.toFixed(2) || '0.00'}</p>
+                  <p><strong>Last Active:</strong> {selectedUser.lastOrder ? new Date(selectedUser.lastOrder).toLocaleDateString() : 'Never'}</p>
+                  <p><strong>Created:</strong> {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}</p>
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Edit Form */}
+            {editingUser && (
+              <Divider>Edit User Information</Divider>
+            )}
+            <Form
+              form={detailsForm}
+              layout="vertical"
+              onFinish={handleUpdateUser}
+              style={{ display: editingUser ? 'block' : 'none' }}
+            >
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="First Name" name="firstName" rules={[{ required: true }]} key="firstName">
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Last Name" name="lastName" rules={[{ required: true }]} key="lastName">
+                    <Input />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Email" name="email" rules={[{ required: true, type: 'email' }]} key="email">
+                    <Input />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Phone" name="phone" key="phone">
+                    <Input />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Role" name="role" rules={[{ required: true }]} key="role">
+                    <Select>
+                      <Option value="salesperson" key="role-salesperson">Salesperson</Option>
+                      <Option value="admin" key="role-admin">Admin</Option>
+                      <Option value="customer" key="role-customer">Customer</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Status" name="status" key="status">
+                    <Select>
+                      <Option value="active" key="status-active">Active</Option>
+                      <Option value="inactive" key="status-inactive">Inactive</Option>
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form>
+          </div>
+        )}
+      </Modal>
+
+      {/* Send Message Modal */}
+      <Modal
+        title={`Send Message to ${selectedUser?.firstName} ${selectedUser?.lastName}`}
+        open={messageModalVisible}
+        onCancel={() => setMessageModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setMessageModalVisible(false)}>
+            Cancel
+          </Button>,
+          <Button key="send" type="primary" onClick={() => messageForm.submit()}>
+            <SendOutlined /> Send Message
+          </Button>,
+        ]}
+      >
+        <Form
+          form={messageForm}
+          layout="vertical"
+          onFinish={handleSendMessageSubmit}
+        >
+          <Form.Item
+            label="Subject"
+            name="subject"
+            rules={[{ required: true, message: 'Please enter a subject' }]}
+            key="subject"
+          >
+            <Input placeholder="Message subject" />
+          </Form.Item>
+          <Form.Item
+            label="Message"
+            name="message"
+            rules={[{ required: true, message: 'Please enter a message' }]}
+            key="message"
+          >
+            <Input.TextArea
+              rows={6}
+              placeholder="Type your message here..."
+            />
+          </Form.Item>
+          <Text type="secondary">
+            This message will be sent via email to {selectedUser?.email}
+          </Text>
+        </Form>
+      </Modal>
     </div>
   );
 };

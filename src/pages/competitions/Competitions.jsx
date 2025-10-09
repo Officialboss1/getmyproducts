@@ -63,6 +63,9 @@ const Competitions = () => {
   // joined competition ids for quick UI toggling
   const [joinedCompetitionIds, setJoinedCompetitionIds] = useState(new Set());
 
+  // selected competition for the sidebar leaderboard
+  const [selectedCompetitionId, setSelectedCompetitionId] = useState(null);
+
   // message hook (avoid static message warnings and support dynamic theme)
   const [messageApi, contextHolder] = message.useMessage();
 
@@ -76,58 +79,89 @@ const Competitions = () => {
   const [actionLoadingIds, setActionLoadingIds] = useState(new Set());
 
   // fetch competitions list
-  const fetchCompetitions = useCallback(async () => {
+  const fetchCompetitions = useCallback(async (preserveJoinedState = false) => {
     setLoadingCompetitions(true);
     try {
       const res = await api.competitions.getCompetitions();
       const comps = res.data || [];
       setCompetitions(comps);
 
-      // build joined ids set from response if API supplies membership info
-      const joinedSet = new Set();
-      // try to infer current user id from localStorage
+      // Get current user ID
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       const currentUserId = currentUser._id || currentUser.id || currentUser.userId || null;
+      console.log('Current user ID for competition check:', currentUserId);
+
+      // Build joined ids set from populated participants data
+      const joinedSet = new Set();
+
+      // If preserveJoinedState is true, start with current joined state
+      if (preserveJoinedState) {
+        setJoinedCompetitionIds((prev) => {
+          prev.forEach(id => joinedSet.add(id));
+          return prev;
+        });
+      }
 
       comps.forEach((c) => {
         const compId = String(c._id || c.id);
-        if (c.isJoined === true || c.joined === true) {
-          joinedSet.add(compId);
-          return;
-        }
 
-        // If participants is an array of userIds or objects
+        // Skip if already in joined set (from preserveJoinedState)
+        if (joinedSet.has(compId)) return;
+
+        // Debug: log participant data
+        console.log(`Competition ${compId} participants:`, c.participants);
+
+        // Check participants array (should be populated with user objects)
         if (Array.isArray(c.participants) && currentUserId) {
-          // case: array of ids
-          if (c.participants.includes && c.participants.includes(currentUserId)) {
-            joinedSet.add(compId);
-            return;
-          }
-          // case: array of objects [{ userId: '...' }]
-          const found = c.participants.find && c.participants.find((p) => {
+          const isJoined = c.participants.some((p) => {
             if (!p) return false;
-            return p.userId === currentUserId || p._id === currentUserId || p.id === currentUserId;
+            // Handle populated user objects
+            if (p.user && typeof p.user === 'object') {
+              return p.user._id === currentUserId || p.user.id === currentUserId;
+            }
+            // Handle user ID references
+            if (typeof p === 'string') {
+              return p === currentUserId;
+            }
+            // Handle participant objects with user field
+            return p.user === currentUserId || p._id === currentUserId || p.id === currentUserId || p.userId === currentUserId;
           });
-          if (found) {
+
+          console.log(`User ${currentUserId} joined competition ${compId}:`, isJoined);
+
+          if (isJoined) {
             joinedSet.add(compId);
-            return;
           }
         }
       });
-      setJoinedCompetitionIds(joinedSet);
+
+      console.log('Final joined competitions:', Array.from(joinedSet));
+
+      // If preserveJoinedState is false, replace the joined state
+      // If preserveJoinedState is true, the joinedSet already contains the preserved state
+      if (!preserveJoinedState) {
+        setJoinedCompetitionIds(joinedSet);
+      }
     } catch (err) {
       console.error('Error fetching competitions:', err);
       messageApi.error('Failed to load competitions.');
     } finally {
       setLoadingCompetitions(false);
     }
-  }, []);
+  }, [messageApi]);
 
-  // fetch weekly overall leaderboard
-  const fetchWeeklyLeaderboard = useCallback(async () => {
+  // fetch leaderboard for selected competition
+  const fetchCompetitionLeaderboard = useCallback(async (competitionId = selectedCompetitionId) => {
+    if (!competitionId) {
+      setWeeklyLeaderboard([]);
+      setUserRankOverall(null);
+      setTotalParticipantsOverall(0);
+      setWeeklyLoading(false);
+      return;
+    }
+
     setWeeklyLoading(true);
     try {
-      // Attempt to request leaderboard with current user's id so backend can return yourRank
       let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       let currentUserId = currentUser._id || currentUser.id || currentUser.userId || null;
 
@@ -142,55 +176,48 @@ const Competitions = () => {
         }
       }
 
-      const params = { period: 'weekly' };
-      if (currentUserId) params.userId = currentUserId;
-
-      const res = await api.analytics.getLeaderboard(params);
+      const res = await api.competitions.getCompetitionLeaderboard(competitionId);
       const data = res.data || [];
 
-      // Annotate items with isCurrentUser for UI convenience
-      const annotated = data.map((it) => ({
-        ...it,
-        isCurrentUser: !!(
-          currentUserId && (it.userId === currentUserId || it._id === currentUserId || it.id === currentUserId)
-        ),
+      // Annotate with user info and rank
+      const leaderboardData = data.map((item, index) => ({
+        ...item,
+        rank: index + 1,
+        name: item.user?.name || `${item.user?.firstName || ''} ${item.user?.lastName || ''}`.trim() || 'Unknown',
+        value: item.units || 0,
+        isCurrentUser: !!(currentUserId && item.user?._id === currentUserId),
       }));
 
-  setWeeklyLeaderboard(annotated);
+      // Find user's rank
+      const userEntry = leaderboardData.find(item => item.isCurrentUser);
+      const userRank = userEntry ? userEntry.rank : null;
 
-  // capture possible user score/value from metadata for placeholder display
-  setUserScoreOverall(res.dataMeta?.yourScore ?? res.dataMeta?.yourValue ?? null);
+      // Total participants is the number of entries in the leaderboard
+      const totalParticipants = leaderboardData.length;
 
-  // derive total participants from metadata when available
-  const totalFromMeta = res.dataMeta && (res.dataMeta.totalParticipants || res.dataMeta.total || null);
-  setTotalParticipantsOverall(totalFromMeta ?? annotated.length ?? 0);
-
-      // Determine user's rank: prefer metadata.yourRank else detect in list
-      let foundRank = null;
-      if (res.dataMeta && typeof res.dataMeta.yourRank === 'number') {
-        foundRank = res.dataMeta.yourRank;
-      } else {
-        for (let i = 0; i < annotated.length; i++) {
-          if (annotated[i].isCurrentUser) {
-            foundRank = i + 1;
-            break;
-          }
-        }
-      }
-
-      setUserRankOverall(foundRank);
+      setWeeklyLeaderboard(leaderboardData);
+      setUserRankOverall(userRank);
+      setTotalParticipantsOverall(totalParticipants);
     } catch (err) {
-      console.error('Error fetching weekly leaderboard:', err);
-      messageApi.error('Failed to load weekly leaderboard.');
+      console.error('Error fetching competition leaderboard:', err);
+      messageApi.error('Failed to load competition leaderboard.');
+      setWeeklyLeaderboard([]);
+      setUserRankOverall(null);
+      setTotalParticipantsOverall(0);
     } finally {
       setWeeklyLoading(false);
     }
-  }, []);
+  }, [selectedCompetitionId, messageApi]);
+
 
   useEffect(() => {
-    fetchCompetitions();
-    fetchWeeklyLeaderboard();
-  }, [fetchCompetitions, fetchWeeklyLeaderboard]);
+    const loadData = async () => {
+      await fetchCompetitions();
+      // Load leaderboard for selected competition (initially none selected)
+      await fetchCompetitionLeaderboard();
+    };
+    loadData();
+  }, []); // Empty dependency array to run only once on mount
 
   // Helper: set loading flag for a particular competition action
   const toggleActionLoading = (competitionId, on = true) => {
@@ -200,6 +227,13 @@ const Competitions = () => {
       else next.delete(competitionId);
       return next;
     });
+  };
+
+  // Handle competition selection
+  const selectCompetition = async (competitionId) => {
+    const id = String(competitionId);
+    setSelectedCompetitionId(id);
+    await fetchCompetitionLeaderboard(id);
   };
 
   // Join competition (optimistic UI)
@@ -218,11 +252,13 @@ const Competitions = () => {
 
     try {
       await api.competitions.joinCompetition(id);
-  // exact required success message
-  messageApi.success('You have successfully joined the competition!');
-      // refresh competitions and weekly leaderboard to reflect new participant if necessary
-      fetchCompetitions();
-      fetchWeeklyLeaderboard();
+      // exact required success message
+      messageApi.success('You have successfully joined the competition!');
+      // refresh competitions and selected competition leaderboard
+      await fetchCompetitions(true);
+      if (selectedCompetitionId) {
+        await fetchCompetitionLeaderboard(selectedCompetitionId);
+      }
     } catch (err) {
       console.error('Join failed:', err);
       // rollback optimistic change
@@ -252,8 +288,10 @@ const Competitions = () => {
     try {
       await api.competitions.leaveCompetition(id);
       messageApi.success('You left the competition.');
-      fetchCompetitions();
-      fetchWeeklyLeaderboard();
+      await fetchCompetitions(true);
+      if (selectedCompetitionId) {
+        await fetchCompetitionLeaderboard(selectedCompetitionId);
+      }
     } catch (err) {
       console.error('Leave failed:', err);
       // rollback removal
@@ -319,7 +357,7 @@ const Competitions = () => {
     return `${minutes} minute${minutes > 1 ? 's' : ''} remaining`;
   };
 
-  // render actions: Join / Joined(with Dropdown)
+  // render actions: Join / Leave button
   const renderActionForCompetition = (competition) => {
     const id = String(competition._id || competition.id);
     const status = getCompetitionStatus(competition);
@@ -334,29 +372,16 @@ const Competitions = () => {
       );
     }
 
-    if (!isJoined) {
-      return (
-        <Button
-          type="primary"
-          size="small"
-          loading={loading}
-          onClick={() => joinCompetition(id)}
-        >
-          Join Competition
-        </Button>
-      );
-    }
-
-    // if joined -> show "Joined" and a separate "Leave Competition" button
     return (
-      <Space>
-        <Button type="default" size="small" loading={loading} disabled>
-          Joined
-        </Button>
-        <Button type="link" danger size="small" loading={loading} onClick={() => leaveCompetition(id)}>
-          Leave Competition
-        </Button>
-      </Space>
+      <Button
+        type={isJoined ? "default" : "primary"}
+        danger={isJoined}
+        size="small"
+        loading={loading}
+        onClick={() => isJoined ? leaveCompetition(id) : joinCompetition(id)}
+      >
+        {isJoined ? "Leave Competition" : "Join Competition"}
+      </Button>
     );
   };
 
@@ -366,48 +391,51 @@ const Competitions = () => {
       title: '#',
       dataIndex: 'rank',
       key: 'rank',
-      render: (_, __, idx) => {
-        const r = idx + 1;
-        if (r === 1) return '🥇';
-        if (r === 2) return '🥈';
-        if (r === 3) return '🥉';
-        return r;
+      render: (rank) => {
+        if (rank === 1) return '🥇';
+        if (rank === 2) return '🥈';
+        if (rank === 3) return '🥉';
+        return rank;
       },
       width: 50,
     },
     {
       title: 'Agent',
-      dataIndex: 'name',
+      dataIndex: 'user',
       key: 'name',
-      render: (name, record) => (
+      render: (user) => (
         <Space>
-          <Avatar src={record.avatar} size="small">
-            {(!record.avatar && name && name[0]) || 'A'}
+          <Avatar size="small">
+            {(user?.name && user.name[0]) || 'A'}
           </Avatar>
-          <Text>{name}</Text>
+          <Text>{user?.name || 'Unknown'}</Text>
         </Space>
       ),
     },
     {
       title: 'Sales',
-      dataIndex: 'value',
+      dataIndex: 'units',
       key: 'value',
-      render: (val) => <Text strong>{val}</Text>,
+      render: (units) => <Text strong>{units || 0}</Text>,
     },
   ];
 
-  // overall leaderboard list item rendering for sidebar
+  // competition leaderboard list item rendering for sidebar
   const renderWeeklyListItem = (item, index) => {
+    // Handle both competition leaderboard format and overall leaderboard format
+    const name = item.user?.name || item.name || item.username || item.agent || 'Unknown';
+    const value = item.units || item.value || item.score || item.points || 0;
+
     return {
       title: (
         <Space>
-          <Text strong>{item.name || item.username || item.agent || 'Unknown'}</Text>
-          <Text type="secondary">· {item.team || item.teamName || ''}</Text>
+          <Text strong>{name}</Text>
+          <Text type="secondary">· Rank #{item.rank || (index + 1)}</Text>
         </Space>
       ),
       description: (
         <Space>
-          <Text strong>{item.value ?? item.score ?? item.points ?? '-'}</Text>
+          <Text strong>{value}</Text>
           <Text type="secondary">units</Text>
         </Space>
       ),
@@ -426,7 +454,7 @@ const Competitions = () => {
               index === 0 ? '#ffd666' : index === 1 ? '#d9d9d9' : index === 2 ? '#ff9c6e' : '#f0f0f0',
           }}
         >
-          {index + 1}
+          {item.rank || (index + 1)}
         </div>
       ),
       extra: index === 0 ? <FireOutlined style={{ color: '#ff4d4f' }} /> : null,
@@ -454,19 +482,15 @@ const upcomingCompetitions = competitions.filter((c) => {
 
   // Build sidebar items (top 5) and include current user if not in top5 but has a rank
   const sidebarItems = (() => {
-    const items = (weeklyLeaderboard || []).slice(0, 5).map((it, idx) => ({ ...it, _sidebarIndex: idx }));
+    const items = (weeklyLeaderboard || []).slice(0, 5);
     // If user has a rank but is not in the top slice, append a placeholder entry
     if (userRankOverall && userRankOverall > 5) {
-      // try to find user entry in the data (maybe not in first page)
+      // try to find user entry in the data
       const found = (weeklyLeaderboard || []).find((it) => it.isCurrentUser);
       if (found) {
         // ensure top list contains found (it might already be present)
-        // if not present, append it
-        const present = items.find((x) => x.userId === found.userId || x._id === found._id || x.id === found.id);
-        if (!present) items.push({ ...found, _sidebarIndex: userRankOverall - 1 });
-      } else {
-        // no entry in current page, but we may have metadata with yourScore
-        items.push({ userId: 'you', name: 'You', value: userScoreOverall ?? '-', isCurrentUser: true, _sidebarIndex: userRankOverall - 1 });
+        const present = items.find((x) => x.user?._id === found.user?._id || x._id === found._id || x.id === found.id);
+        if (!present) items.push(found);
       }
     }
     return items;
@@ -503,21 +527,19 @@ const upcomingCompetitions = competitions.filter((c) => {
                   const status = getCompetitionStatus(competition);
                   const timeRemaining = getTimeRemaining(competition.endDate);
                   const id = String(competition._id || competition.id);
+                  const isSelected = selectedCompetitionId === id;
 
                   return (
                     <List.Item
                       key={id}
-                      actions={[
-                        renderActionForCompetition(competition),
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={() => openDetails(id)}
-                          key={`view-${id}`}
-                        >
-                          View Details
-                        </Button>,
-                      ]}
+                      style={{
+                        cursor: 'pointer',
+                        backgroundColor: isSelected ? '#f6ffed' : 'transparent',
+                        border: isSelected ? '1px solid #b7eb8f' : '1px solid transparent',
+                        borderRadius: 6,
+                        marginBottom: 8
+                      }}
+                      onClick={() => selectCompetition(id)}
                     >
                       <List.Item.Meta
                         avatar={<TrophyOutlined style={{ fontSize: 24, color: '#faad14' }} />}
@@ -525,6 +547,7 @@ const upcomingCompetitions = competitions.filter((c) => {
                           <Space>
                             <Text strong>{competition.name}</Text>
                             <Tag color={status.color}>{status.text}</Tag>
+                            {isSelected && <Tag color="green">Selected</Tag>}
                           </Space>
                         }
                         description={
@@ -539,6 +562,20 @@ const upcomingCompetitions = competitions.filter((c) => {
                           </Space>
                         }
                       />
+                      <Space>
+                        {renderActionForCompetition(competition)}
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent triggering competition selection
+                            openDetails(id);
+                          }}
+                          key={`view-${id}`}
+                        >
+                          View Details
+                        </Button>
+                      </Space>
                     </List.Item>
                   );
                 }}
@@ -623,7 +660,10 @@ const upcomingCompetitions = competitions.filter((c) => {
             title={
               <Space>
                 <CrownOutlined />
-                Weekly Leaderboard
+                {selectedCompetitionId ?
+                  competitions.find(c => String(c._id || c.id) === selectedCompetitionId)?.name + ' Leaderboard' :
+                  'Competition Leaderboard'
+                }
               </Space>
             }
           >
@@ -647,8 +687,8 @@ const upcomingCompetitions = competitions.filter((c) => {
                   dataSource={sidebarItems}
                   renderItem={(item, index) => {
                     const itm = renderWeeklyListItem(item, index);
-                    const itmKey = item.userId || item.id || item._id || `leader-${index}`;
-                    const isYou = item.isCurrentUser === true || item.userId === 'you';
+                    const itmKey = item.user?._id || item.userId || item.id || item._id || `leader-${index}`;
+                    const isYou = item.isCurrentUser === true;
                     return (
                       <List.Item key={itmKey} extra={itm.extra} style={isYou ? { background: '#f6ffed', borderRadius: 6 } : {}}>
                         <List.Item.Meta avatar={itm.avatar} title={itm.title} description={itm.description} />
