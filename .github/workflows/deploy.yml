@@ -37,5 +37,5 @@ jobs:
           # Source directory (the result of 'npm run build')
           local-dir: ./build/
           # ❗️ IMPORTANT: Update this to your public web root directory
-          server-dir: /home/your_user/yourdomain.com/
+          server-dir: /home/silversp/salestracker.silverspringbank.com/Mike
           dangerous-clean-slate: true
