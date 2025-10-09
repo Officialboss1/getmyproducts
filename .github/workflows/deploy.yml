@@ -36,6 +36,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./dist/
           server-dir: /home/silversp/salestracker.silverspringbank.com/
+
           protocol: ftp
           port: 21
           dangerous-clean-slate: true
