@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://salestrackerback.silverspringbank.com/", // update if backend runs elsewhere
+  baseURL: "https://salestrackerback.silverspringbank.com/api", // update if backend runs elsewhere
 });
 
 api.interceptors.request.use((config) => {
