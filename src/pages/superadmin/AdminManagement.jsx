@@ -36,16 +36,8 @@ const AdminManagement = () => {
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  
-  const {
-    admins,
-    loading,
-    error,
-    createAdmin,
-    updateAdmin,
-    deleteAdmin,
-    refetch,
-  } = useAdmins();
+
+  const { admins = [], loading, createAdmin, updateAdmin, deleteAdmin } = useAdmins();
 
   const handleCreateAdmin = async (values) => {
     try {
@@ -54,19 +46,19 @@ const AdminManagement = () => {
       setModalVisible(false);
       form.resetFields();
     } catch (error) {
-      message.error(error.message);
+      message.error(error.message || 'Failed to create admin');
     }
   };
 
   const handleUpdateAdmin = async (values) => {
     try {
-      await updateAdmin(editingAdmin.id, values);
+      await updateAdmin(editingAdmin._id, values);
       message.success('Admin updated successfully!');
       setModalVisible(false);
       setEditingAdmin(null);
       form.resetFields();
     } catch (error) {
-      message.error(error.message);
+      message.error(error.message || 'Failed to update admin');
     }
   };
 
@@ -75,7 +67,7 @@ const AdminManagement = () => {
       await deleteAdmin(adminId);
       message.success('Admin deleted successfully!');
     } catch (error) {
-      message.error(error.message);
+      message.error(error.message || 'Failed to delete admin');
     }
   };
 
@@ -104,7 +96,11 @@ const AdminManagement = () => {
     form.resetFields();
   };
 
-  const filteredAdmins = admins.filter(admin =>
+  // Filter only users with role 'admin'
+  const adminUsers = admins.filter(user => (user.role || '').toLowerCase() === 'admin');
+
+  // Search filter
+  const filteredAdmins = adminUsers.filter(admin =>
     admin.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
     admin.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
     admin.email?.toLowerCase().includes(searchText.toLowerCase())
@@ -113,9 +109,8 @@ const AdminManagement = () => {
   const columns = [
     {
       title: 'Admin',
-      dataIndex: 'firstName',
       key: 'name',
-      render: (text, record) => (
+      render: (_, record) => (
         <Space>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
             {record.firstName?.[0]}{record.lastName?.[0]}
@@ -152,9 +147,8 @@ const AdminManagement = () => {
     },
     {
       title: 'Last Active',
-      dataIndex: 'lastActive',
       key: 'lastActive',
-      render: (date) => date ? new Date(date).toLocaleDateString() : <Text type="secondary">Never</Text>,
+      render: (_, record) => record.lastOrder ? new Date(record.lastOrder).toLocaleDateString() : <Text type="secondary">Never</Text>,
     },
     {
       title: 'Actions',
@@ -162,25 +156,17 @@ const AdminManagement = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="Edit Admin">
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => openEditModal(record)}
-            />
+            <Button type="link" icon={<EditOutlined />} onClick={() => openEditModal(record)} />
           </Tooltip>
           <Popconfirm
             title="Delete Admin"
             description="Are you sure you want to delete this admin?"
-            onConfirm={() => handleDeleteAdmin(record.id)}
+            onConfirm={() => handleDeleteAdmin(record._id)}
             okText="Yes"
             cancelText="No"
           >
             <Tooltip title="Delete Admin">
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-              />
+              <Button type="link" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
         </Space>
@@ -208,11 +194,7 @@ const AdminManagement = () => {
               onChange={(e) => setSearchText(e.target.value)}
               style={{ width: 200 }}
             />
-            <Button
-              type="primary"
-              icon={<UserAddOutlined />}
-              onClick={openCreateModal}
-            >
+            <Button type="primary" icon={<UserAddOutlined />} onClick={openCreateModal}>
               Add Admin
             </Button>
           </Space>
@@ -224,12 +206,11 @@ const AdminManagement = () => {
           columns={columns}
           dataSource={filteredAdmins}
           loading={loading}
-          rowKey="id"
+          rowKey="_id"
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => 
-              `${range[0]}-${range[1]} of ${total} admins`,
+            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} admins`,
           }}
         />
       </Card>
@@ -248,73 +229,45 @@ const AdminManagement = () => {
         >
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                label="First Name"
-                name="firstName"
-                rules={[{ required: true, message: 'Please enter first name' }]}
-              >
-                <Input prefix={<UserAddOutlined />} placeholder="First Name" />
+              <Form.Item label="First Name" name="firstName" rules={[{ required: true, message: 'Please enter first name' }]}>
+                <Input placeholder="First Name" prefix={<UserAddOutlined />} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                label="Last Name"
-                name="lastName"
-                rules={[{ required: true, message: 'Please enter last name' }]}
-              >
+              <Form.Item label="Last Name" name="lastName" rules={[{ required: true, message: 'Please enter last name' }]}>
                 <Input placeholder="Last Name" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item
-            label="Email"
-            name="email"
-            rules={[
-              { required: true, message: 'Please enter email' },
-              { type: 'email', message: 'Please enter a valid email' }
-            ]}
-          >
-            <Input prefix={<MailOutlined />} placeholder="Email address" />
+          <Form.Item label="Email" name="email" rules={[{ required: true, message: 'Please enter email' }, { type: 'email', message: 'Please enter a valid email' }]}>
+            <Input placeholder="Email address" prefix={<MailOutlined />} />
           </Form.Item>
 
-          <Form.Item
-            label="Phone"
-            name="phone"
-          >
-            <Input prefix={<PhoneOutlined />} placeholder="Phone number" />
+          <Form.Item label="Password" name="password" rules={[{ required: true, message: 'Please enter password' }, { min: 6, message: 'Password must be at least 6 characters' }]}>
+            <Input.Password placeholder="Password" />
           </Form.Item>
 
-          <Form.Item
-            label="Status"
-            name="status"
-            initialValue="active"
-          >
+          <Form.Item label="Phone" name="phone">
+            <Input placeholder="Phone number" prefix={<PhoneOutlined />} />
+          </Form.Item>
+
+          <Form.Item label="Status" name="status" initialValue="active">
             <Select>
-              <Option value="active">Active</Option>
-              <Option value="inactive">Inactive</Option>
-              <Option value="pending">Pending</Option>
+              <Option value="active" key="status-active">Active</Option>
+              <Option value="inactive" key="status-inactive">Inactive</Option>
+              <Option value="pending" key="status-pending">Pending</Option>
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Notes"
-            name="notes"
-          >
-            <TextArea
-              rows={3}
-              placeholder="Additional notes about this admin..."
-            />
+          <Form.Item label="Notes" name="notes">
+            <TextArea rows={3} placeholder="Additional notes about this admin..." />
           </Form.Item>
 
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">
-                {editingAdmin ? 'Update Admin' : 'Create Admin'}
-              </Button>
-              <Button onClick={handleModalCancel}>
-                Cancel
-              </Button>
+              <Button type="primary" htmlType="submit">{editingAdmin ? 'Update Admin' : 'Create Admin'}</Button>
+              <Button onClick={handleModalCancel}>Cancel</Button>
             </Space>
           </Form.Item>
         </Form>

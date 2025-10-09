@@ -50,90 +50,50 @@ const AuditLogs = () => {
     exportLogs,
   } = useAuditLogs();
 
-  // Mock data - replace with actual API data
-  const auditLogs = [
-    {
-      id: '1',
-      userName: 'John Doe',
-      userRole: 'sales_person',
-      userId: 'user_123',
-      action: 'create_sale',
-      details: 'Created new sale for product iPhone 15 - 5 units',
-      timestamp: '2025-10-02T14:30:00Z',
-      ipAddress: '192.168.1.100',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      resourceId: 'sale_789',
-      resourceType: 'sale',
-      changes: {
-        product_id: { from: null, to: 'prod_123' },
-        quantity_sold: { from: null, to: 5 },
-        total_amount: { from: null, to: 5000 }
-      },
-      status: 'success'
-    },
-    {
-      id: '2',
-      userName: 'Sarah Wilson',
-      userRole: 'admin',
-      userId: 'user_456',
-      action: 'update_user',
-      details: 'Updated user role from sales_person to team_head',
-      timestamp: '2025-10-02T13:15:00Z',
-      ipAddress: '192.168.1.101',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-      resourceId: 'user_789',
-      resourceType: 'user',
-      changes: {
-        role: { from: 'sales_person', to: 'team_head' }
-      },
-      status: 'success'
-    },
-    {
-      id: '3',
-      userName: 'Mike Johnson',
-      userRole: 'super_admin',
-      userId: 'user_789',
-      action: 'delete_competition',
-      details: 'Deleted competition "Summer Sales Challenge"',
-      timestamp: '2025-10-02T11:45:00Z',
-      ipAddress: '192.168.1.102',
-      userAgent: 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36',
-      resourceId: 'comp_123',
-      resourceType: 'competition',
-      changes: {},
-      status: 'success'
-    },
-    {
-      id: '4',
-      userName: 'Jane Smith',
-      userRole: 'sales_person',
-      userId: 'user_234',
-      action: 'login',
-      details: 'User logged in successfully',
-      timestamp: '2025-10-02T10:20:00Z',
-      ipAddress: '192.168.1.103',
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/537.36',
-      resourceId: null,
-      resourceType: 'auth',
-      changes: {},
-      status: 'success'
-    },
-    {
-      id: '5',
-      userName: 'Bob Brown',
-      userRole: 'sales_person',
-      userId: 'user_567',
-      action: 'failed_login',
-      details: 'Failed login attempt - invalid password',
-      timestamp: '2025-10-02T09:30:00Z',
-      ipAddress: '192.168.1.104',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-      resourceId: null,
-      resourceType: 'auth',
-      changes: {},
-      status: 'failed'
-    },
-  ];
+  // Use live logs from hook instead of mock data
+  // Map backend audit log shape to table-friendly shape
+  const mappedLogs = (logs || []).map((l) => {
+    const editor = l.editor_user_id || l.actor || l.user || null;
+    const userName = editor
+      ? `${editor.firstName || ''} ${editor.lastName || ''}`.trim() || editor.email || 'Unknown'
+      : l.userName || l.user || 'Unknown';
+
+    const userRole = editor?.role || l.userRole || l.role || 'N/A';
+
+    // Details: prefer a human-friendly summary if before/after data exist
+    let details = l.details || l.message || '';
+    if (!details && (l.before_data || l.after_data)) {
+      // compute simple changes summary
+      const before = l.before_data || {};
+      const after = l.after_data || {};
+      const changes = {};
+      Object.keys({ ...before, ...after }).forEach((key) => {
+        if (JSON.stringify(before[key]) !== JSON.stringify(after[key])) {
+          changes[key] = { from: before[key], to: after[key] };
+        }
+      });
+      details = Object.keys(changes).length > 0 ? JSON.stringify(changes) : '';
+    }
+
+    const timestamp = l.createdAt || l.timestamp || l.date || null;
+
+    return {
+      id: l._id || l.id,
+      userName,
+      userRole,
+      userId: editor?._id || l.userId,
+      action: l.action_type || l.action || l.actionType || 'action',
+      details,
+      timestamp,
+      ipAddress: l.ipAddress || l.ip || null,
+      userAgent: l.userAgent || l.ua || null,
+      resourceId: l.sale_id?._id || l.resourceId || l.resource_id || null,
+      resourceType: l.sale_id ? 'sale' : l.resourceType || null,
+      changes: l.changes || (l.before_data || l.after_data ? { before: l.before_data, after: l.after_data } : {}),
+      status: l.status || 'success',
+      raw: l,
+    };
+  });
 
   const handleSearch = () => {
     const newFilters = {
@@ -266,11 +226,26 @@ const AuditLogs = () => {
     },
   ];
 
-  const filteredLogs = auditLogs.filter(log =>
-    log.userName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    log.details?.toLowerCase().includes(searchText.toLowerCase()) ||
-    log.action?.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredLogs = mappedLogs.filter((log) => {
+    const q = searchText?.toLowerCase() || '';
+    const matchesSearch =
+      log.userName?.toLowerCase().includes(q) ||
+      log.details?.toLowerCase().includes(q) ||
+      log.action?.toLowerCase().includes(q);
+
+    const matchesUser = userFilter === 'all' ? true : log.userRole === userFilter;
+    const baseAction = actionFilter === 'all' ? true : log.action?.startsWith(actionFilter);
+
+    let matchesDate = true;
+    if (dateRange?.[0] && dateRange?.[1]) {
+      const start = dateRange[0].toDate ? dateRange[0].toDate() : new Date(dateRange[0]);
+      const end = dateRange[1].toDate ? dateRange[1].toDate() : new Date(dateRange[1]);
+      const t = log.timestamp ? new Date(log.timestamp) : null;
+      if (t) matchesDate = t >= start && t <= end;
+    }
+
+    return matchesSearch && matchesUser && baseAction && matchesDate;
+  });
 
   return (
     <div>

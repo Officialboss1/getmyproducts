@@ -167,7 +167,7 @@ const AddSale = () => {
                     >
                       {products.map(product => (
                         <Option key={product._id} value={product._id}>
-                          {product.name} - ${product.current_price}
+                          {product.name} - ₦{product.current_price}
                         </Option>
                       ))}
                     </Select>
@@ -215,7 +215,7 @@ const AddSale = () => {
                     <InputNumber
                       style={{ width: '100%' }}
                       disabled
-                      formatter={value => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                      formatter={value => `₦ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                       parser={value => value.replace(/\$\s?|(,*)/g, '')}
                     />
                   </Form.Item>
@@ -272,7 +272,7 @@ const AddSale = () => {
                     <Text strong>Price:</Text>
                   </Col>
                   <Col span={12}>
-                    <Text>${selectedProduct.current_price}</Text>
+                    <Text>₦{selectedProduct.current_price}</Text>
                   </Col>
                 </Row>
                 <Row gutter={[8, 8]}>

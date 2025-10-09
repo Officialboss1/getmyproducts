@@ -22,7 +22,6 @@ import {
   ArrowRightOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { customerAPI } from '../../services/customerApi';
 
 const { Title, Text } = Typography;
 
@@ -88,7 +87,7 @@ const CustomerDashboard = ({ user }) => {
       value: dashboardData?.totalSpent || 0,
       icon: <TagOutlined />,
       color: '#52c41a',
-      prefix: '$',
+      prefix: '₦',
     },
     {
       title: 'Reward Points',

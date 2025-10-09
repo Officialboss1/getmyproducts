@@ -5,6 +5,7 @@ import {
   Button,
   Modal,
   Form,
+  Input,
   InputNumber,
   Select,
   message,
@@ -42,7 +43,7 @@ const TargetsManagement = () => {
   const {
     users: salespersons,
     loading: usersLoading,
-    refetch: refetchUsers,
+    refetch: _refetchUsers,
   } = useUsers('sales_person');
 
   useEffect(() => {
@@ -54,29 +55,38 @@ const TargetsManagement = () => {
 
     setLoading(true);
     try {
-      const targetsPromises = salespersons.map(async (user) => {
+      // Only process users who are salespersons
+      const salesTeam = (salespersons || []).filter(u => {
+        const role = (u.role || '').toLowerCase();
+        return role ===  role === 'salesperson';
+      });
+
+      const targetsPromises = salesTeam.map(async (user) => {
+        const uid = user.id || user._id;
         try {
-          const response = await adminAPI.getTargets(user.id);
-          const progressResponse = await adminAPI.getProgress(user.id, 'monthly');
+          const response = await adminAPI.getTargets(uid);
+          const progressResponse = await adminAPI.getProgress(uid, 'monthly');
           
           return {
             ...user,
+            id: uid,
             targets: response.data,
             progress: progressResponse.data,
           };
-        } catch (error) {
+        } catch {
           return {
             ...user,
+            id: uid,
             targets: null,
             progress: null,
           };
         }
       });
 
-      const data = await Promise.all(targetsPromises);
+  const data = await Promise.all(targetsPromises);
       setTargetsData(data);
-    } catch (error) {
-      console.error('Error fetching targets data:', error);
+    } catch (_error) {
+      console.error('Error fetching targets data:', _error);
       message.error('Failed to load targets data');
     } finally {
       setLoading(false);
@@ -190,15 +200,18 @@ const TargetsManagement = () => {
       title: 'Monthly Progress',
       key: 'progress',
       render: (_, record) => {
-        const progress = record.progress;
-        const monthlyTarget = record.targets?.monthly || 900;
-        const currentSales = progress?.totalUnits || 0;
-        const percentage = getProgressPercentage(currentSales, monthlyTarget);
-        
+        const progress = record.progress || {};
+        const currentSales = Number(progress.totalUnits || 0);
+        const monthlyTarget = Number(progress.target || record.targets?.monthly || 900);
+        // Prefer backend-provided percentage when available
+        const percentage = typeof progress.percentage !== 'undefined' && progress.percentage !== null
+          ? Math.round(Number(progress.percentage))
+          : Math.round(getProgressPercentage(currentSales, monthlyTarget));
+
         return (
           <Space direction="vertical" style={{ width: 150 }}>
             <Progress 
-              percent={Math.round(percentage)} 
+              percent={Math.min(100, percentage)} 
               strokeColor={getProgressColor(percentage)}
               size="small"
             />
@@ -213,20 +226,28 @@ const TargetsManagement = () => {
       title: 'Status',
       key: 'status',
       render: (_, record) => {
-        const progress = record.progress;
-        const monthlyTarget = record.targets?.monthly || 900;
-        const currentSales = progress?.totalUnits || 0;
-        const percentage = getProgressPercentage(currentSales, monthlyTarget);
-        
-        if (percentage >= 100) {
-          return <Tag color="success">Target Achieved</Tag>;
-        } else if (percentage >= 75) {
-          return <Tag color="processing">On Track</Tag>;
-        } else if (percentage >= 50) {
-          return <Tag color="warning">Needs Push</Tag>;
-        } else {
-          return <Tag color="error">Behind</Tag>;
-        }
+        const progress = record.progress || {};
+        const currentSales = Number(progress.totalUnits || 0);
+        const monthlyTarget = Number(progress.target || record.targets?.monthly || 900);
+
+        // Prefer backend status if provided, else compute
+        const backendStatus = progress.status;
+        const computedPercentage = Math.round(getProgressPercentage(currentSales, monthlyTarget));
+
+        const statusText = backendStatus || (
+          computedPercentage >= 100 ? 'Target Met' : computedPercentage >= 75 ? 'On Track' : computedPercentage >= 50 ? 'Needs Push' : 'Behind'
+        );
+
+        // Map statusText to tag color
+        const statusColor = statusText?.toLowerCase().includes('target') || statusText?.toLowerCase().includes('met')
+          ? 'success'
+          : statusText?.toLowerCase().includes('on track')
+          ? 'processing'
+          : statusText?.toLowerCase().includes('needs')
+          ? 'warning'
+          : 'error';
+
+        return <Tag color={statusColor}>{statusText}</Tag>;
       },
     },
     {
@@ -248,7 +269,7 @@ const TargetsManagement = () => {
               <Button
                 type="link"
                 danger
-                onClick={() => handleResetTargets(record.id)}
+                onClick={() => handleResetTargets(record.id || record._id)}
               >
                 Reset
               </Button>
@@ -356,7 +377,7 @@ const TargetsManagement = () => {
           columns={columns}
           dataSource={filteredData}
           loading={loading || usersLoading}
-          rowKey="id"
+          rowKey={(r) => r.id || r._id}
           pagination={{
             pageSize: 10,
             showSizeChanger: true,

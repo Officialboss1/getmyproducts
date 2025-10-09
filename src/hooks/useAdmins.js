@@ -11,7 +11,7 @@ export const useAdmins = () => {
     setError(null);
     try {
       const response = await superAdminAPI.getAdmins();
-      setAdmins(response.data || []);
+      setAdmins(response.data.users || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch admins');
       console.error('Error fetching admins:', err);

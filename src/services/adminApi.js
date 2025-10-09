@@ -1,49 +1,90 @@
-import api from './api';
+import { api, apiUtils } from "./api";
 
-// Admin specific API endpoints
+/**
+ * Admin API
+ * ----------------------------------------
+ * Handles user management, targets, competitions,
+ * analytics, and dashboard operations for Admins
+ */
+
 export const adminAPI = {
-  // User Management
-  getUsers: (role = '') => api.get('/users', { params: { role } }),
+  /* ===============================
+   * USER MANAGEMENT
+   * =============================== */
+  getUsers: (role = "", additionalParams = {}) => api.get("/users", { params: { role, ...additionalParams } }),
   getUserById: (userId) => api.get(`/users/${userId}`),
+  createUser: (userData) => api.post("/users", userData),
   updateUser: (userId, updateData) => api.put(`/users/${userId}`, updateData),
-  createUser: (userData) => api.post('/users', userData),
   deleteUser: (userId) => api.delete(`/users/${userId}`),
-  
-  // Targets Management
-  getTargets: (userId = '') => {
-    const url = userId ? `/targets/${userId}` : '/targets';
+
+
+
+
+  /* ===============================
+   * TARGETS MANAGEMENT
+   * =============================== */
+  getTargets: (userId = "") => {
+    const url = userId ? `/targets/${userId}` : "/targets";
     return api.get(url);
   },
-  setTargets: (targetData) => api.post('/targets', targetData),
+  setTargets: (targetData) => api.post("/targets", targetData),
   updateTargets: (userId, targetData) => api.put(`/targets/${userId}`, targetData),
   deleteTargets: (userId) => api.delete(`/targets/${userId}`),
-  
-  // Referral Settings
-  getReferralSettings: () => api.get('/settings/referrals'),
-  updateReferralSettings: (settingsData) => api.put('/settings/referrals', settingsData),
-  
-  // Competitions Management
-  getCompetitions: () => api.get('/competitions'),
-  getCompetitionById: (competitionId) => api.get(`/competitions/${competitionId}`),
-  createCompetition: (competitionData) => api.post('/competitions', competitionData),
-  updateCompetition: (competitionId, competitionData) => api.put(`/competitions/${competitionId}`, competitionData),
-  deleteCompetition: (competitionId) => api.delete(`/competitions/${competitionId}`),
-  getCompetitionLeaderboard: (competitionId) => api.get(`/competitions/${competitionId}/leaderboard`),
-  
-  // Analytics
+
+  /* ===============================
+   * REFERRAL SETTINGS
+   * =============================== */
+  getReferralSettings: () => api.get("/settings/referrals"),
+  updateReferralSettings: (settingsData) => api.put("/settings/referrals", settingsData),
+
+  /* ===============================
+   * COMPETITIONS MANAGEMENT
+   * =============================== */
+  getCompetitions: () => api.get("/competitions"),
+  getCompetitionById: (competitionId) => api.get(`/competitions/${apiUtils.sanitizePathId(competitionId)}`),
+  createCompetition: (competitionData) => api.post("/competitions", competitionData),
+  updateCompetition: (competitionId, competitionData) =>
+    api.put(`/competitions/${apiUtils.sanitizePathId(competitionId)}`, competitionData),
+  deleteCompetition: (competitionId) => api.delete(`/competitions/${apiUtils.sanitizePathId(competitionId)}`),
+  getCompetitionLeaderboard: (competitionId) =>
+    api.get(`/competitions/${apiUtils.sanitizePathId(competitionId)}/leaderboard`),
+
+  /* ===============================
+   * ANALYTICS
+   * =============================== */
+
+
+  // getSystemAnalytics: (filters = {}) => api.get('/analytics/system', { params: filters }),
   getSystemAnalytics: (filters = {}) => api.get('/analytics/system', { params: filters }),
-  getProgress: (userId = '', period = 'monthly') => {
-    const url = userId ? `/analytics/progress/${userId}` : '/analytics/progress';
+
+
+  getProgress: (userId = "", period = "monthly") => {
+    const url = userId ? `/analytics/progress/${userId}` : "/analytics/progress";
     return api.get(url, { params: { period } });
   },
-  getLeaderboard: (params = {}) => api.get('/analytics/leaderboard', { params }),
-  
-  // Customers
-  getCustomers: () => api.get('/customers'),
+
+  getLeaderboard: (params = {}) => api.get("/analytics/leaderboard", { params }),
+
+  /* ===============================
+   * CUSTOMERS (optional feature)
+   * =============================== */
+  getCustomers: () => api.get("/customers"),
   getCustomerById: (customerId) => api.get(`/customers/${customerId}`),
-  
-  // Audit Logs (for Super Admin)
-  getAuditLogs: (filters = {}) => api.get('/audit', { params: filters }),
+
+  /* ===============================
+   * AUDIT LOGS
+   * =============================== */
+  getAuditLogs: (filters = {}) => api.get("/audit", { params: filters }),
+
+   getRecentActivities: (params = {}) => api.get("/audit/recent", { params }),
+
+  /* ===============================
+   * SYSTEM HEALTH (Live)
+   * =============================== */
+  getSystemHealth: () => api.get("/system/health"),
+  // Activity settings (who counts as 'active')
+  getActivitySettings: () => api.get('/settings/activity'),
+  updateActivitySettings: (payload) => api.put('/settings/activity', payload),
 };
 
 export default adminAPI;

@@ -24,7 +24,8 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import { useCustomerPurchases } from '../../hooks/useCustomerPurchases';
-import dayjs from 'dayjs';
+// dayjs isn't used in this file yet
+// import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -225,7 +226,7 @@ const PurchaseHistory = ({ user }) => {
               value={stats.totalSpent}
               prefix={<DollarOutlined />}
               valueStyle={{ color: '#52c41a' }}
-            //   prefix="$"
+            //   prefix="₦"
             />
           </Card>
         </Col>

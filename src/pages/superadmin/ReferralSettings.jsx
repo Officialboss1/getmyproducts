@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Form,
@@ -15,49 +15,35 @@ import {
   Tag,
   Progress,
   message,
+  Tabs,
+  Table,
+  Spin,
 } from 'antd';
 import {
   SettingOutlined,
   SaveOutlined,
   TeamOutlined,
   TrophyOutlined,
-  DollarOutlined,
-  CheckCircleOutlined,
-  InfoCircleOutlined,
 } from '@ant-design/icons';
 import { useReferralSettings } from '../../hooks/useReferralSettings';
 
 const { Title, Text } = Typography;
+const { TabPane } = Tabs;
 
 const ReferralSettings = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [enableReferralSystem, setEnableReferralSystem] = useState(true);
+  const [activeTab, setActiveTab] = useState('settings');
 
-  const {
-    settings,
-    loading: settingsLoading,
-    error,
-    updateSettings,
-  } = useReferralSettings();
+  const { settings, loading: settingsLoading, error, updateSettings } = useReferralSettings();
 
-  // Mock data - replace with actual API data
-  const referralSettings = {
-    enabled: true,
-    requiredReferrals: 3,
-    requiredSalesPerReferral: 5,
-    teamHeadBonus: 500,
-    referralBonus: 50,
-    maxReferralBonus: 1000,
-    autoPromotion: true,
-    notificationEnabled: true,
-    stats: {
-      totalReferrals: 245,
-      activeReferrals: 189,
-      teamHeads: 45,
-      totalBonuses: 12500,
+  useEffect(() => {
+    if (settings) {
+      form.setFieldsValue(settings);
+      setEnableReferralSystem(settings.enabled ?? true);
     }
-  };
+  }, [settings, form]);
 
   const onFinish = async (values) => {
     setLoading(true);
@@ -68,8 +54,8 @@ const ReferralSettings = () => {
       };
       await updateSettings(updatedSettings);
       message.success('Referral settings updated successfully!');
-    } catch (error) {
-      message.error(error.message);
+    } catch (err) {
+      message.error(err?.message || 'Failed to update settings');
     } finally {
       setLoading(false);
     }
@@ -77,25 +63,48 @@ const ReferralSettings = () => {
 
   const handleEnableChange = (checked) => {
     setEnableReferralSystem(checked);
-    if (!checked) {
-      message.warning('Referral system has been disabled');
-    } else {
-      message.success('Referral system has been enabled');
-    }
+    message.info(`Referral system ${checked ? 'enabled' : 'disabled'}`);
   };
 
-  const stats = referralSettings.stats;
+  if (settingsLoading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <Spin size="large" tip="Loading referral settings..." />
+      </div>
+    );
+  }
+
+  if (error) {
+    return <Alert type="error" message="Error loading referral settings" description={error.message} />;
+  }
+
+  const referralStats = settings?.stats || {};
+  const referralHistory = settings?.history || [];
+
+  const referralColumns = [
+    { title: 'Referrer', dataIndex: 'referrer', key: 'referrer' },
+    { title: 'Referred', dataIndex: 'referred', key: 'referred' },
+    { title: 'Date', dataIndex: 'date', key: 'date', render: (d) => new Date(d).toLocaleDateString() },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status) => (
+        <Tag color={status === 'active' ? 'green' : 'orange'}>{status.toUpperCase()}</Tag>
+      ),
+    },
+    { title: 'Sales', dataIndex: 'sales', key: 'sales', align: 'center' },
+    { title: 'Bonus', dataIndex: 'bonus', key: 'bonus', render: (b) => `$${b}`, align: 'right' },
+  ];
 
   return (
     <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
         <Col>
           <Title level={2} style={{ margin: 0 }}>
-            <SettingOutlined /> Referral System Settings
+            <SettingOutlined /> Referral System
           </Title>
-          <Text type="secondary">
-            Configure referral thresholds, bonuses, and team promotion rules
-          </Text>
+          <Text type="secondary">Configure referral program and track team growth</Text>
         </Col>
         <Col>
           <Space>
@@ -120,279 +129,133 @@ const ReferralSettings = () => {
         />
       )}
 
-      {/* Statistics */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={6}>
-          <Card>
-            <Statistic
-              title="Total Referrals"
-              value={stats.totalReferrals}
-              prefix={<TeamOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={6}>
-          <Card>
-            <Statistic
-              title="Active Referrals"
-              value={stats.activeReferrals}
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={6}>
-          <Card>
-            <Statistic
-              title="Team Heads"
-              value={stats.teamHeads}
-              prefix={<TrophyOutlined />}
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={6}>
-          <Card>
-            <Statistic
-              title="Total Bonuses"
-              value={stats.totalBonuses}
-              prefix="$"
-              valueStyle={{ color: '#722ed1' }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[24, 24]}>
-        {/* Settings Form */}
-        <Col xs={24} lg={16}>
-          <Card 
-            title="Referral Configuration"
-            loading={settingsLoading}
-          >
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              initialValues={referralSettings}
-              disabled={!enableReferralSystem}
-            >
-              <Title level={4}>Promotion Requirements</Title>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Required Referrals"
-                    name="requiredReferrals"
-                    tooltip="Number of referrals needed to become Team Head"
-                    rules={[{ required: true, message: 'Please enter required referrals' }]}
-                  >
-                    <InputNumber
-                      min={1}
-                      max={20}
-                      style={{ width: '100%' }}
-                      placeholder="e.g., 3"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Sales per Referral"
-                    name="requiredSalesPerReferral"
-                    tooltip="Minimum sales each referral must make"
-                    rules={[{ required: true, message: 'Please enter required sales' }]}
-                  >
-                    <InputNumber
-                      min={1}
-                      max={100}
-                      style={{ width: '100%' }}
-                      placeholder="e.g., 5"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Divider />
-
-              <Title level={4}>Bonus Configuration</Title>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Referral Bonus"
-                    name="referralBonus"
-                    tooltip="Bonus amount for each successful referral"
-                    rules={[{ required: true, message: 'Please enter referral bonus' }]}
-                  >
-                    <InputNumber
-                      min={0}
-                      max={1000}
-                      prefix="$"
-                      style={{ width: '100%' }}
-                      placeholder="e.g., 50"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Team Head Bonus"
-                    name="teamHeadBonus"
-                    tooltip="One-time bonus when promoted to Team Head"
-                    rules={[{ required: true, message: 'Please enter team head bonus' }]}
-                  >
-                    <InputNumber
-                      min={0}
-                      max={5000}
-                      prefix="$"
-                      style={{ width: '100%' }}
-                      placeholder="e.g., 500"
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item
-                label="Maximum Referral Bonus"
-                name="maxReferralBonus"
-                tooltip="Maximum total bonus a user can earn from referrals"
-              >
-                <InputNumber
-                  min={0}
-                  max={10000}
-                  prefix="$"
-                  style={{ width: '100%' }}
-                  placeholder="e.g., 1000"
-                />
-              </Form.Item>
-
-              <Divider />
-
-              <Title level={4}>System Settings</Title>
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Auto Promotion"
-                    name="autoPromotion"
-                    valuePropName="checked"
-                  >
-                    <Switch
-                      checkedChildren="Auto"
-                      unCheckedChildren="Manual"
-                    />
-                  </Form.Item>
-                  <Text type="secondary">
-                    Automatically promote to Team Head when requirements are met
-                  </Text>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Notifications"
-                    name="notificationEnabled"
-                    valuePropName="checked"
-                  >
-                    <Switch
-                      checkedChildren="On"
-                      unCheckedChildren="Off"
-                    />
-                  </Form.Item>
-                  <Text type="secondary">
-                    Send notifications for referral activities
-                  </Text>
-                </Col>
-              </Row>
-
-              <Form.Item style={{ marginTop: 24 }}>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
-                  icon={<SaveOutlined />}
-                  loading={loading}
+      <Tabs activeKey={activeTab} onChange={setActiveTab}>
+        <TabPane tab="Settings" key="settings">
+          <Row gutter={[24, 24]}>
+            <Col xs={24} lg={16}>
+              <Card title="Referral Configuration">
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onFinish={onFinish}
                   disabled={!enableReferralSystem}
                 >
-                  Save Settings
-                </Button>
-              </Form.Item>
-            </Form>
-          </Card>
-        </Col>
+                  <Title level={4}>Promotion Requirements</Title>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item
+                        label="Required Referrals"
+                        name="requiredReferrals"
+                        rules={[{ required: true, message: 'Enter required referrals' }]}
+                      >
+                        <InputNumber min={1} max={20} style={{ width: '100%' }} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item
+                        label="Sales per Referral"
+                        name="requiredSalesPerReferral"
+                        rules={[{ required: true, message: 'Enter sales per referral' }]}
+                      >
+                        <InputNumber min={1} max={100} style={{ width: '100%' }} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
 
-        {/* Guidelines & Information */}
-        <Col xs={24} lg={8}>
-          <Card title="System Overview" style={{ marginBottom: 24 }}>
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
-              <div>
-                <Text strong>Current Status:</Text>
-                <br />
-                <Tag color={enableReferralSystem ? "green" : "red"} style={{ marginTop: 4 }}>
-                  {enableReferralSystem ? "ACTIVE" : "DISABLED"}
-                </Tag>
-              </div>
-              
-              <div>
-                <Text strong>Team Head Progress:</Text>
-                <Progress
-                  percent={65}
-                  status="active"
-                  style={{ marginTop: 8 }}
-                />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
-                  45 of 70 eligible salespersons
-                </Text>
-              </div>
+                  <Divider />
+                  <Title level={4}>Bonus Configuration</Title>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label="Referral Bonus" name="referralBonus">
+                        <InputNumber min={0} max={1000} prefix="$" style={{ width: '100%' }} />
+                      </Form.Item>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="Team Head Bonus" name="teamHeadBonus">
+                        <InputNumber min={0} max={5000} prefix="$" style={{ width: '100%' }} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
 
-              <Divider />
+                  <Form.Item label="Maximum Referral Bonus" name="maxReferralBonus">
+                    <InputNumber min={0} max={10000} prefix="$" style={{ width: '100%' }} />
+                  </Form.Item>
 
-              <Text strong>Quick Stats:</Text>
-              <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                <Row justify="space-between">
-                  <Text>Pending Promotions:</Text>
-                  <Text strong>12</Text>
-                </Row>
-                <Row justify="space-between">
-                  <Text>This Month's Bonuses:</Text>
-                  <Text strong>$2,450</Text>
-                </Row>
-                <Row justify="space-between">
-                  <Text>Avg Referral Time:</Text>
-                  <Text strong>7 days</Text>
-                </Row>
-              </Space>
-            </Space>
-          </Card>
+                  <Divider />
+                  <Title level={4}>System Settings</Title>
+                  <Row gutter={16}>
+                    <Col span={12}>
+                      <Form.Item label="Auto Promotion" name="autoPromotion" valuePropName="checked">
+                        <Switch checkedChildren="Auto" unCheckedChildren="Manual" />
+                      </Form.Item>
+                      <Text type="secondary">
+                        Automatically promote to Team Head when requirements are met
+                      </Text>
+                    </Col>
+                    <Col span={12}>
+                      <Form.Item label="Notifications" name="notificationEnabled" valuePropName="checked">
+                        <Switch checkedChildren="On" unCheckedChildren="Off" />
+                      </Form.Item>
+                      <Text type="secondary">Send notifications for referral activities</Text>
+                    </Col>
+                  </Row>
 
-          <Card title="Best Practices">
-            <Space direction="vertical" size="middle">
-              <div>
-                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-                <Text>Set achievable but challenging targets</Text>
-              </div>
-              <div>
-                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-                <Text>Balance bonus amounts with budget constraints</Text>
-              </div>
-              <div>
-                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-                <Text>Monitor referral quality, not just quantity</Text>
-              </div>
-              <div>
-                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-                <Text>Regularly review and adjust thresholds</Text>
-              </div>
-              <div>
-                <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
-                <Text>Communicate changes to all users</Text>
-              </div>
-            </Space>
-          </Card>
+                  <Form.Item style={{ marginTop: 24 }}>
+                    <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={loading}>
+                      Save Settings
+                    </Button>
+                  </Form.Item>
+                </Form>
+              </Card>
+            </Col>
 
-          <Card title="Impact Analysis" style={{ marginTop: 24 }}>
-            <Alert
-              message="Settings Change Impact"
-              description="Changing these settings will affect all current and future referrals. Existing Team Heads will not be demoted."
-              type="info"
-              showIcon
+            <Col xs={24} lg={8}>
+              <Card title="Program Statistics" style={{ marginBottom: 24 }}>
+                <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                  <Statistic
+                    title="Total Referrals"
+                    value={referralStats.totalReferrals ?? 0}
+                    prefix={<TeamOutlined />}
+                    valueStyle={{ color: '#1890ff' }}
+                  />
+                  <Statistic
+                    title="Active Referrals"
+                    value={referralStats.activeReferrals ?? 0}
+                    valueStyle={{ color: '#52c41a' }}
+                  />
+                  <Statistic
+                    title="Team Heads Created"
+                    value={referralStats.teamHeads ?? 0}
+                    prefix={<TrophyOutlined />}
+                    valueStyle={{ color: '#faad14' }}
+                  />
+                  <Statistic
+                    title="Total Bonuses Paid"
+                    value={referralStats.totalBonuses ?? 0}
+                    prefix="$"
+                    valueStyle={{ color: '#722ed1' }}
+                  />
+                </Space>
+              </Card>
+            </Col>
+          </Row>
+        </TabPane>
+
+        <TabPane tab="Referral History" key="history">
+          <Card>
+            <Table
+              columns={referralColumns}
+              dataSource={referralHistory}
+              rowKey="id"
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} referrals`,
+              }}
             />
           </Card>
-        </Col>
-      </Row>
+        </TabPane>
+      </Tabs>
     </div>
   );
 };

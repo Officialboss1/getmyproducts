@@ -31,6 +31,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { useCompetitions } from '../../hooks/useCompetitions';
+import api from '../../services/api';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -42,16 +43,17 @@ const CompetitionsManagement = () => {
   const [editingCompetition, setEditingCompetition] = useState(null);
   const [leaderboardVisible, setLeaderboardVisible] = useState(false);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
+  const [leaderboardData, setLeaderboardData] = useState([]);
   const [form] = Form.useForm();
 
   const {
     competitions,
     loading,
-    error,
+    error: _error,
     createCompetition,
     updateCompetition,
     deleteCompetition,
-    refetch,
+    refetch: _refetch,
   } = useCompetitions();
 
   const handleCreateCompetition = async (values) => {
@@ -67,8 +69,8 @@ const CompetitionsManagement = () => {
       message.success('Competition created successfully!');
       setModalVisible(false);
       form.resetFields();
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message || 'Failed to create competition');
     }
   };
 
@@ -81,28 +83,38 @@ const CompetitionsManagement = () => {
       };
       delete competitionData.dateRange;
 
-      await updateCompetition(editingCompetition.id, competitionData);
+  await updateCompetition(editingCompetition._id || editingCompetition.id, competitionData);
       message.success('Competition updated successfully!');
       setModalVisible(false);
       setEditingCompetition(null);
       form.resetFields();
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message || 'Failed to update competition');
     }
   };
 
   const handleDeleteCompetition = async (competitionId) => {
     try {
-      await deleteCompetition(competitionId);
+  await deleteCompetition(competitionId);
       message.success('Competition deleted successfully!');
-    } catch (error) {
-      message.error(error.message);
+    } catch (_error) {
+      message.error(_error.message || 'Failed to delete competition');
     }
   };
 
   const showLeaderboard = (competition) => {
     setSelectedCompetition(competition);
-    setLeaderboardVisible(true);
+    // fetch leaderboard from API
+    (async () => {
+      try {
+        const res = await api.competitions.getCompetitionLeaderboard(competition._id || competition.id);
+        setLeaderboardData(res.data || []);
+      } catch (err) {
+        console.error('Failed to load leaderboard', err);
+        setLeaderboardData([]);
+      }
+      setLeaderboardVisible(true);
+    })();
   };
 
   const openEditModal = (competition) => {
@@ -221,10 +233,10 @@ const CompetitionsManagement = () => {
     {
       title: 'Participants',
       key: 'participants',
-      render: () => (
+      render: (_, record) => (
         <Space>
           <UserOutlined />
-          <Text>24</Text>
+          <Text>{(record.participants && record.participants.length) || 0}</Text>
         </Space>
       ),
     },
@@ -452,38 +464,38 @@ const CompetitionsManagement = () => {
         ]}
         width={600}
       >
-        <List
-          dataSource={mockLeaderboard}
-          renderItem={(item) => (
-            <List.Item
-              actions={[
-                <Text strong key="value">
-                  {item.value} {selectedCompetition?.metric === 'revenue' ? '$' : 'units'}
-                </Text>,
-              ]}
-            >
-              <List.Item.Meta
-                avatar={
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: item.rank === 1 ? '#ffd666' : item.rank === 2 ? '#d9d9d9' : item.rank === 3 ? '#ff9c6e' : '#f0f0f0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                  }}>
-                    {item.rank}
-                  </div>
-                }
-                title={item.name}
-                description={`${item.sales} sales`}
-              />
-            </List.Item>
-          )}
-        />
+          <List
+            dataSource={leaderboardData}
+            renderItem={(item, idx) => (
+              <List.Item
+                actions={[
+                  <Text strong key="value">
+                    {(selectedCompetition?.metric === 'revenue' ? item.revenue : item.units) || 0} {selectedCompetition?.metric === 'revenue' ? '$' : 'units'}
+                  </Text>,
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <div style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: idx === 0 ? '#ffd666' : idx === 1 ? '#d9d9d9' : idx === 2 ? '#ff9c6e' : '#f0f0f0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                    }}>
+                      {item.rank || idx + 1}
+                    </div>
+                  }
+                  title={item.user?.name || item.user?.email || 'Unknown'}
+                  description={`${item.units || 0} units`}
+                />
+              </List.Item>
+            )}
+          />
       </Modal>
     </div>
   );

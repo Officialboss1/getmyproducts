@@ -28,7 +28,8 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
-import { customerAPI } from '../../services/customerApi';
+// customerAPI currently unused in this mock page; keep placeholder
+// import { customerAPI } from '../../services/customerApi';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -36,7 +37,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 const { TabPane } = Tabs;
 
-const Support = ({ user }) => {
+const Support = ({ _user }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [tickets, setTickets] = useState([]);
@@ -142,8 +143,8 @@ const Support = ({ user }) => {
       ];
 
       setTickets(mockTickets);
-    } catch (error) {
-      console.error('Error fetching tickets:', error);
+    } catch {
+      console.error('Error fetching tickets:');
       message.error('Failed to load support tickets');
     } finally {
       setLoading(false);
@@ -173,7 +174,7 @@ const Support = ({ user }) => {
       message.success('Support ticket submitted successfully!');
       form.resetFields();
       setActiveTab('history');
-    } catch (error) {
+    } catch {
       message.error('Failed to submit support ticket');
     } finally {
       setLoading(false);
@@ -211,7 +212,7 @@ const Support = ({ user }) => {
       }));
       setReplyText('');
       message.success('Reply sent successfully!');
-    } catch (error) {
+    } catch {
       message.error('Failed to send reply');
     }
   };

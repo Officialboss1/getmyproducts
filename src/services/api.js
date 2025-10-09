@@ -99,28 +99,45 @@ export const authAPI = {
   getProfile: () => 
     api.get("/auth/profile"),
   
-  updateProfile: (userData) => 
+  updateProfile: (userData) =>
     api.put("/auth/profile", userData),
+
+  forgotPassword: (email) =>
+    api.post("/auth/forgot-password", { email }),
+
+  resetPassword: (token, newPassword) =>
+    api.post("/auth/reset-password", { token, newPassword }),
 };
 
 // Users & Roles APIs
 export const usersAPI = {
-  getAllUsers: (params = {}) => 
+  getAllUsers: (params = {}) =>
     api.get("/users", { params }),
-  
-  getUserById: (userId) => 
+
+  getUserById: (userId) =>
     api.get(`/users/${userId}`),
-  
-  updateUserRole: (userId, roleData) => 
+
+  getUserProfile: (userId) =>
+    api.get(`/users/${userId}/profile`),
+
+  updateUserProfile: (userId, formData) =>
+    api.put(`/users/${userId}/profile`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    }),
+
+  deleteAvatar: (userId) =>
+    api.delete(`/users/${userId}/avatar`),
+
+  updateUserRole: (userId, roleData) =>
     api.patch(`/users/${userId}/role`, roleData),
-  
-  updateUser: (userId, userData) => 
+
+  updateUser: (userId, userData) =>
     api.put(`/users/${userId}`, userData),
-  
-  deleteUser: (userId) => 
+
+  deleteUser: (userId) =>
     api.delete(`/users/${userId}`),
-  
-  getSalesTeam: () => 
+
+  getSalesTeam: () =>
     api.get("/users/team"),
 };
 
@@ -205,17 +222,23 @@ export const targetsAPI = {
 
 // Analytics & Progress APIs
 export const analyticsAPI = {
-  getProgress: (userId = '', period = 'monthly') =>
-    api.get(`/analytics/progress/${userId}?period=${period}`),
+  getProgress: (userId = '', period = 'monthly') => {
+    const base = '/analytics/progress';
+    const url = userId ? `${base}/${userId}` : base;
+    return api.get(`${url}?period=${period}`);
+  },
 
-  getLeaderboard: (period = 'monthly') =>
-    api.get(`/analytics/leaderboard?period=${period}`),
+  getLeaderboard: (period = 'monthly') => {
+    // Accept either a string period ('monthly') or an object of params { period: 'weekly', userId }
+    if (typeof period === 'object' && period !== null) {
+      return api.get('/analytics/leaderboard', { params: period });
+    }
+    return api.get(`/analytics/leaderboard?period=${period}`);
+  },
 
   getDailySales: () =>
-    api.get(`/analytics/daily`),
+    api.get(`/analytics/daily-sales`),
 
-  getLeaderboard: (params = {}) => 
-    api.get("/analytics/leaderboard", { params }),
 
   getPerformanceTrend: (userId = "", period = "monthly") => {
     const url = userId ? `/analytics/trend/${userId}` : "/analytics/trend";
@@ -238,25 +261,25 @@ export const competitionsAPI = {
     api.get("/competitions", { params }),
   
   getCompetitionById: (competitionId) => 
-    api.get(`/competitions/${competitionId}`),
+    api.get(`/competitions/${apiUtils.sanitizePathId(competitionId)}`),
   
   createCompetition: (competitionData) => 
     api.post("/competitions", competitionData),
   
   updateCompetition: (competitionId, competitionData) => 
-    api.put(`/competitions/${competitionId}`, competitionData),
+    api.put(`/competitions/${apiUtils.sanitizePathId(competitionId)}`, competitionData),
   
   deleteCompetition: (competitionId) => 
-    api.delete(`/competitions/${competitionId}`),
+    api.delete(`/competitions/${apiUtils.sanitizePathId(competitionId)}`),
   
   joinCompetition: (competitionId) => 
-    api.post(`/competitions/${competitionId}/join`),
+    api.post(`/competitions/${apiUtils.sanitizePathId(competitionId)}/join`),
   
   leaveCompetition: (competitionId) => 
-    api.post(`/competitions/${competitionId}/leave`),
+    api.post(`/competitions/${apiUtils.sanitizePathId(competitionId)}/leave`),
   
   getCompetitionLeaderboard: (competitionId) => 
-    api.get(`/competitions/${competitionId}/leaderboard`),
+    api.get(`/competitions/${apiUtils.sanitizePathId(competitionId)}/leaderboard`),
   
   getMyCompetitions: () => 
     api.get("/competitions/my-competitions"),
@@ -281,16 +304,16 @@ export const auditAPI = {
 // Referrals APIs
 export const referralsAPI = {
   getMyReferrals: () => 
-    api.get("/referrals/my-referrals"), // MISSING ENDPOINT
-  
+    api.get("/referrals/my-referrals"), 
   getReferralProgress: () => 
-    api.get("/referrals/progress"), // MISSING ENDPOINT
-  
+    api.get("/referrals/progress"), 
   createReferral: (referralData) => 
-    api.post("/referrals", referralData), // MISSING ENDPOINT
-  
+    api.post("/referrals", referralData), 
+  getReferralLink: () => 
+    api.get("/referrals/link"),
+
   getReferralStats: () => 
-    api.get("/referrals/stats"), // MISSING ENDPOINT
+    api.get("/referrals/stats"), 
   
   validateReferralCode: (code) => 
     api.post("/referrals/validate", { code }), // MISSING ENDPOINT
@@ -382,6 +405,17 @@ export const apiUtils = {
   hasAnyRole: (requiredRoles) => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     return requiredRoles.includes(user.role);
+  },
+  // Sanitize path IDs before inserting into URL paths (trim and encode)
+  sanitizePathId: (id) => {
+    if (id === undefined || id === null) return id;
+    try {
+      // convert to string and trim whitespace/newlines
+      const s = String(id).trim();
+      return encodeURIComponent(s);
+    } catch {
+      return id;
+    }
   },
 };
 
