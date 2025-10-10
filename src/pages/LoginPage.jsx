@@ -50,6 +50,8 @@ const LoginPage = () => {
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
 
+      console.log('LoginPage: Stored user:', user, 'token:', token);
+
       message.success("Login successful!");
       navigate("/dashboard");
     } catch (err) {
