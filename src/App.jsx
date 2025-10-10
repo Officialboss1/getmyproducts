@@ -22,6 +22,7 @@ export const useUser = () => {
 const UserProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('user');
+    console.log('UserProvider: Loading user from localStorage:', savedUser);
     return savedUser ? JSON.parse(savedUser) : null;
   });
 

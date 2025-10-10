@@ -68,6 +68,8 @@ const DashboardPage = () => {
 
   const role = user?.role;
 
+  console.log('DashboardPage: user:', user, 'role:', role);
+
   useEffect(() => {
     const validateAuth = () => {
       try {
