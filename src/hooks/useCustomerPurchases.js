@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { customerAPI } from '../services/customerApi';
+import { customerAPI } from '../../src/api/services/customerApi';
 
 export const useCustomerPurchases = (customerId) => {
   const [purchases, setPurchases] = useState([]);
@@ -8,14 +8,16 @@ export const useCustomerPurchases = (customerId) => {
 
   const fetchPurchases = async () => {
     if (!customerId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
       const response = await customerAPI.getPurchaseHistory(customerId);
       setPurchases(response.data || []);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch purchase history');
+      setError(
+        err.response?.data?.message || 'Failed to fetch purchase history'
+      );
       console.error('Error fetching purchases:', err);
     } finally {
       setLoading(false);
@@ -33,3 +35,6 @@ export const useCustomerPurchases = (customerId) => {
     refetch: fetchPurchases,
   };
 };
+
+
+

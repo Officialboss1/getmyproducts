@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/adminApi';
+import { adminAPI } from '../../src/api/services/adminApi';
 
 export const useUsers = (role = '') => {
   const [users, setUsers] = useState([]);
@@ -11,7 +11,8 @@ export const useUsers = (role = '') => {
     setError(null);
     try {
       const response = await adminAPI.getUsers(userRole);
-      setUsers(response.data || []);
+      // Backend returns { users: [...], pagination: {...} }
+      setUsers(response.data?.users || []);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch users');
       console.error('Error fetching users:', err);
@@ -63,3 +64,6 @@ export const useUsers = (role = '') => {
     refetch: fetchUsers,
   };
 };
+
+
+

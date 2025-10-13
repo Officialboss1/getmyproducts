@@ -43,16 +43,16 @@ const UserManagement = () => {
   const [activeTab, setActiveTab] = useState('salespersons');
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
-  
+
   const {
-    users: salespersons,
+    users: allUsersFromBackend,
     loading,
     error: _error,
     updateUser,
     createUser,
     deleteUser,
     refetch: _refetch,
-  } = useUsers('sales_person');
+  } = useUsers(''); // Try with empty string to get all users
 
   // Mock customers fallback (used if backend returns no customers)
   const mockCustomers = [
@@ -152,12 +152,27 @@ const UserManagement = () => {
       key: 'name',
       render: (text, record) => (
         <Space>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            {record.firstName?.[0]}{record.lastName?.[0]}
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#1890ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
+            {record.firstName?.[0]}
+            {record.lastName?.[0]}
           </div>
           <div>
             <Space>
-              <Text strong>{record.firstName} {record.lastName}</Text>
+              <Text strong>
+                {record.firstName} {record.lastName}
+              </Text>
               {record.role === 'team_head' && (
                 <Tooltip title="Team Head">
                   <CrownOutlined style={{ color: '#faad14' }} />
@@ -165,7 +180,9 @@ const UserManagement = () => {
               )}
             </Space>
             <br />
-            <Text type="secondary" style={{ fontSize: '12px' }}>{record.email}</Text>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {record.email}
+            </Text>
           </div>
         </Space>
       ),
@@ -181,8 +198,8 @@ const UserManagement = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge 
-          status={status === 'active' ? 'success' : 'default'} 
+        <Badge
+          status={status === 'active' ? 'success' : 'default'}
           text={status?.toUpperCase()}
         />
       ),
@@ -235,11 +252,7 @@ const UserManagement = () => {
             cancelText="No"
           >
             <Tooltip title="Delete User">
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-              />
+              <Button type="link" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
         </Space>
@@ -254,13 +267,30 @@ const UserManagement = () => {
       key: 'name',
       render: (text, record) => (
         <Space>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#13c2c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            {record.firstName?.[0]}{record.lastName?.[0]}
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#13c2c2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
+            {record.firstName?.[0]}
+            {record.lastName?.[0]}
           </div>
           <div>
-            <Text strong>{record.firstName} {record.lastName}</Text>
+            <Text strong>
+              {record.firstName} {record.lastName}
+            </Text>
             <br />
-            <Text type="secondary" style={{ fontSize: '12px' }}>{record.email}</Text>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {record.email}
+            </Text>
           </div>
         </Space>
       ),
@@ -286,8 +316,8 @@ const UserManagement = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge 
-          status={status === 'active' ? 'success' : 'default'} 
+        <Badge
+          status={status === 'active' ? 'success' : 'default'}
           text={status?.toUpperCase()}
         />
       ),
@@ -315,33 +345,39 @@ const UserManagement = () => {
     },
   ];
 
-  // Use users returned from backend. Filter by role (support both 'sales_person' and 'salesperson').
-  const allUsers = salespersons || [];
+  // Use users returned from backend. Filter by role locally.
+  const allUsers = Array.isArray(allUsersFromBackend)
+    ? allUsersFromBackend
+    : [];
 
-  const salesTeam = allUsers.filter(u => {
+  const salesTeam = allUsers.filter((u) => {
     const role = u.role || '';
-    return role === 'sales_person' || role === 'salesperson';
+    return role === 'salesperson' || role === 'team_head';
   });
 
-  const customers = allUsers.filter(u => (u.role || '') === 'customer');
+  const customers = allUsers.filter((u) => (u.role || '') === 'customer');
 
-  const filteredSalespersons = salesTeam.filter(user =>
-    user.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    user.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchText.toLowerCase())
+  const filteredSalespersons = salesTeam.filter(
+    (user) =>
+      user.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchText.toLowerCase())
   );
 
-  const filteredCustomers = (customers.length > 0 ? customers : mockCustomers).filter(customer =>
-    customer.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    customer.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    customer.email?.toLowerCase().includes(searchText.toLowerCase()) ||
-    (customer.company || '').toLowerCase().includes(searchText.toLowerCase())
+  const filteredCustomers = (
+    customers.length > 0 ? customers : mockCustomers
+  ).filter(
+    (customer) =>
+      customer.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      customer.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      customer.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+      (customer.company || '').toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={12}>
           <Title level={2} style={{ margin: 0 }}>
             <TeamOutlined /> User Management
           </Title>
@@ -349,23 +385,28 @@ const UserManagement = () => {
             Manage sales team members and customer accounts
           </Text>
         </Col>
-        <Col>
-          <Space>
-            <Input
-              placeholder="Search users..."
-              prefix={<SearchOutlined />}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 200 }}
-            />
-            <Button
-              type="primary"
-              icon={<UserAddOutlined />}
-              onClick={openCreateModal}
-            >
-              Add User
-            </Button>
-          </Space>
+        <Col xs={24} md={12}>
+          <Row justify="end" gutter={[8, 8]}>
+            <Col xs={24} sm={12} md={16}>
+              <Input
+                placeholder="Search users..."
+                prefix={<SearchOutlined />}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            </Col>
+            <Col xs={24} sm={12} md={8}>
+              <Button
+                type="primary"
+                icon={<UserAddOutlined />}
+                onClick={openCreateModal}
+                block
+              >
+                Add User
+              </Button>
+            </Col>
+          </Row>
         </Col>
       </Row>
 
@@ -377,24 +418,26 @@ const UserManagement = () => {
               dataSource={filteredSalespersons}
               loading={loading}
               rowKey={(record) => record.id || record._id}
+              scroll={{ x: 800 }}
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
-                showTotal: (total, range) => 
+                showTotal: (total, range) =>
                   `${range[0]}-${range[1]} of ${total} salespersons`,
               }}
             />
           </TabPane>
-          
+
           <TabPane tab="Customers" key="customers">
             <Table
               columns={customerColumns}
               dataSource={filteredCustomers}
               rowKey={(record) => record.id || record._id}
+              scroll={{ x: 800 }}
               pagination={{
                 pageSize: 10,
                 showSizeChanger: true,
-                showTotal: (total, range) => 
+                showTotal: (total, range) =>
                   `${range[0]}-${range[1]} of ${total} customers`,
               }}
             />
@@ -440,24 +483,17 @@ const UserManagement = () => {
             name="email"
             rules={[
               { required: true, message: 'Please enter email' },
-              { type: 'email', message: 'Please enter a valid email' }
+              { type: 'email', message: 'Please enter a valid email' },
             ]}
           >
             <Input prefix={<MailOutlined />} placeholder="Email address" />
           </Form.Item>
 
-          <Form.Item
-            label="Phone"
-            name="phone"
-          >
+          <Form.Item label="Phone" name="phone">
             <Input prefix={<PhoneOutlined />} placeholder="Phone number" />
           </Form.Item>
 
-          <Form.Item
-            label="Status"
-            name="status"
-            initialValue="active"
-          >
+          <Form.Item label="Status" name="status" initialValue="active">
             <Select>
               <Option value="active">Active</Option>
               <Option value="inactive">Inactive</Option>
@@ -465,11 +501,7 @@ const UserManagement = () => {
           </Form.Item>
 
           {!editingUser && (
-            <Form.Item
-              label="Role"
-              name="role"
-              initialValue="sales_person"
-            >
+            <Form.Item label="Role" name="role" initialValue="sales_person">
               <Select>
                 <Option value="sales_person">Sales Person</Option>
                 <Option value="team_head">Team Head</Option>
@@ -482,9 +514,7 @@ const UserManagement = () => {
               <Button type="primary" htmlType="submit">
                 {editingUser ? 'Update User' : 'Create User'}
               </Button>
-              <Button onClick={handleModalCancel}>
-                Cancel
-              </Button>
+              <Button onClick={handleModalCancel}>Cancel</Button>
             </Space>
           </Form.Item>
         </Form>

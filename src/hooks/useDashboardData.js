@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import apiSvc, { referralsAPI } from '../services/api';
+import apiSvc, { referralsAPI } from '../../src/api/services/api';
 
 // Helper to safely parse numbers
 const toNumber = (v, fallback = 0) => {
@@ -8,7 +8,13 @@ const toNumber = (v, fallback = 0) => {
 };
 
 const extractQty = (sale) =>
-  toNumber(sale?.quantity_sold ?? sale?.units ?? sale?.quantity ?? sale?.total_units ?? 0);
+  toNumber(
+    sale?.quantity_sold ??
+      sale?.units ??
+      sale?.quantity ??
+      sale?.total_units ??
+      0
+  );
 
 export default function useDashboardData(user) {
   const [loading, setLoading] = useState(false);
@@ -21,11 +27,19 @@ export default function useDashboardData(user) {
 
     try {
       // Sales endpoint is proxied through service helpers when present
-      const salesPromise = user && user.role === 'salesperson'
-        ? apiSvc.sales.getSales({ userId: user._id })
-        : apiSvc.sales.getSales();
+      const salesPromise =
+        user && user.role === 'salesperson'
+          ? apiSvc.sales.getSales({ userId: user._id })
+          : apiSvc.sales.getSales();
 
-      const [dailyRes, weeklyRes, monthlyRes, targetsRes, salesRes, competitionsRes] = await Promise.all([
+      const [
+        dailyRes,
+        weeklyRes,
+        monthlyRes,
+        targetsRes,
+        salesRes,
+        competitionsRes,
+      ] = await Promise.all([
         apiSvc.analytics.getProgress('', 'daily'),
         apiSvc.analytics.getProgress('', 'weekly'),
         apiSvc.analytics.getProgress('', 'monthly'),
@@ -42,14 +56,16 @@ export default function useDashboardData(user) {
       } catch {
         try {
           const list = (await referralsAPI.getMyReferrals())?.data ?? [];
-          const activeCount = list.filter(r => (r.status || '').toLowerCase() !== 'completed').length;
+          const activeCount = list.filter(
+            (r) => (r.status || '').toLowerCase() !== 'completed'
+          ).length;
           referralStats = { activeReferrals: activeCount };
         } catch {
           referralStats = null;
         }
       }
 
-      const salesList = salesRes?.data || [];
+      const salesList = salesRes?.data?.sales || salesRes?.data || [];
 
       // compute numeric targets
       const targets = targetsRes?.data || {};
@@ -59,17 +75,21 @@ export default function useDashboardData(user) {
 
       const dailyUnits = toNumber(dailyRes?.data?.totalUnits ?? 0);
 
-      const weeklyUnits = Array.isArray(salesList) && salesList.length > 0
-        ? salesList.reduce((s, sale) => s + extractQty(sale), 0)
-        : toNumber(weeklyRes?.data?.totalUnits ?? 0);
+      const weeklyUnits =
+        Array.isArray(salesList) && salesList.length > 0
+          ? salesList.reduce((s, sale) => s + extractQty(sale), 0)
+          : toNumber(weeklyRes?.data?.totalUnits ?? 0);
 
-      const monthlyUnits = toNumber(monthlyRes?.data?.totalUnits ?? 0) || (
-        Array.isArray(salesList) ? salesList.reduce((s, sale) => s + extractQty(sale), 0) : 0
-      );
+      const monthlyUnits =
+        toNumber(monthlyRes?.data?.totalUnits ?? 0) ||
+        (Array.isArray(salesList)
+          ? salesList.reduce((s, sale) => s + extractQty(sale), 0)
+          : 0);
 
-      const monthlyPercentageBackend = monthlyRes?.data?.percentage !== undefined
-        ? toNumber(monthlyRes.data.percentage)
-        : undefined;
+      const monthlyPercentageBackend =
+        monthlyRes?.data?.percentage !== undefined
+          ? toNumber(monthlyRes.data.percentage)
+          : undefined;
 
       const computed = {
         progress: {
@@ -95,7 +115,9 @@ export default function useDashboardData(user) {
           monthlyProgress: {
             current: monthlyUnits,
             target: monthlyTarget,
-            percentage: monthlyPercentageBackend ?? (monthlyTarget ? (monthlyUnits / monthlyTarget) * 100 : 0),
+            percentage:
+              monthlyPercentageBackend ??
+              (monthlyTarget ? (monthlyUnits / monthlyTarget) * 100 : 0),
           },
         },
       };
@@ -120,3 +142,6 @@ export default function useDashboardData(user) {
     refresh: fetchData,
   };
 }
+
+
+

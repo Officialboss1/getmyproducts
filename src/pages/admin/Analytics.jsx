@@ -24,10 +24,27 @@ import {
   TrophyOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
+  LineChartOutlined,
+  PieChartOutlined,
 } from '@ant-design/icons';
-import { adminAPI } from '../../services/adminApi';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
+import { adminAPI } from '../../api/services/adminApi';
 
-const {   Text, Title } = Typography;
+const { Text, Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 const { TabPane } = Tabs;
@@ -87,8 +104,8 @@ const Analytics = () => {
       key: 'progress',
       render: (_, record) => (
         <Space direction="vertical" style={{ width: 150 }}>
-          <Progress 
-            percent={Math.min(100, record.progress || 0)} 
+          <Progress
+            percent={Math.min(100, record.progress || 0)}
             status={record.progress >= 100 ? 'success' : 'active'}
             size="small"
           />
@@ -102,8 +119,20 @@ const Analytics = () => {
       title: 'Status',
       key: 'status',
       render: (_, record) => (
-        <Tag color={record.progress >= 100 ? 'success' : record.progress >= 90 ? 'warning' : 'error'}>
-          {record.progress >= 100 ? 'Achieved' : record.progress >= 90 ? 'Close' : 'Behind'}
+        <Tag
+          color={
+            record.progress >= 100
+              ? 'success'
+              : record.progress >= 90
+                ? 'warning'
+                : 'error'
+          }
+        >
+          {record.progress >= 100
+            ? 'Achieved'
+            : record.progress >= 90
+              ? 'Close'
+              : 'Behind'}
         </Tag>
       ),
     },
@@ -125,13 +154,25 @@ const Analytics = () => {
       title: 'Revenue',
       dataIndex: 'revenue',
       key: 'revenue',
-      render: (revenue) => <Text type="success">${revenue?.toLocaleString() || 0}</Text>,
+      render: (revenue) => (
+        <Text type="success">${revenue?.toLocaleString() || 0}</Text>
+      ),
     },
     {
       title: 'Performance',
       key: 'performance',
       render: (_, __, index) => (
-        <Tag color={index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : 'default'}>
+        <Tag
+          color={
+            index === 0
+              ? 'gold'
+              : index === 1
+                ? 'silver'
+                : index === 2
+                  ? 'bronze'
+                  : 'default'
+          }
+        >
           #{index + 1}
         </Tag>
       ),
@@ -151,9 +192,7 @@ const Analytics = () => {
         </Col>
         <Col>
           <Space>
-            <Button icon={<DownloadOutlined />}>
-              Export Report
-            </Button>
+            <Button icon={<DownloadOutlined />}>Export Report</Button>
           </Space>
         </Col>
       </Row>
@@ -188,14 +227,11 @@ const Analytics = () => {
             </Select>
           </Col>
           <Col xs={24} md={8}>
-            <RangePicker
-              style={{ width: '100%' }}
-              onChange={setDateRange}
-            />
+            <RangePicker style={{ width: '100%' }} onChange={setDateRange} />
           </Col>
           <Col xs={24} md={4}>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<FilterOutlined />}
               onClick={fetchAnalyticsData}
               loading={loading}
@@ -231,7 +267,11 @@ const Analytics = () => {
             {data.growthRate != null && (
               <div style={{ marginTop: 8 }}>
                 <Text type={data.growthRate > 0 ? 'success' : 'danger'}>
-                  {data.growthRate > 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                  {data.growthRate > 0 ? (
+                    <ArrowUpOutlined />
+                  ) : (
+                    <ArrowDownOutlined />
+                  )}
                   {Math.abs(data.growthRate)}% from last period
                 </Text>
               </div>
@@ -318,32 +358,142 @@ const Analytics = () => {
           </Card>
         </TabPane>
 
-        <TabPane tab="Sales Trend" key="trend">
-          <Card>
-            <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <BarChartOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: 16 }} />
-              <Title level={4} type="secondary">
-                Sales Trend Analysis
-              </Title>
-              <Text type="secondary">
-                Visual charts and trend analysis coming in next update
-              </Text>
-              <div style={{ marginTop: 16 }}>
-                <Text strong>Recent Months Performance:</Text>
-                <div style={{ marginTop: 8 }}>
-                  {data.salesTrend && data.salesTrend.length > 0 ? (
-                    data.salesTrend.map(item => (
-                      <Tag key={item.month} color="blue" style={{ margin: '4px' }}>
-                        {item.month}: {item.sales} units
-                      </Tag>
-                    ))
-                  ) : (
-                    <Text type="secondary">No sales trend data available</Text>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Card>
+        <TabPane tab="Sales Trend Analysis" key="trend">
+          <Row gutter={16}>
+            <Col xs={24} lg={16}>
+              <Card
+                title={
+                  <>
+                    <LineChartOutlined /> Sales Trend Over Time
+                  </>
+                }
+              >
+                <ResponsiveContainer width="100%" height={400}>
+                  <LineChart data={data.salesTrend || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [value, 'Sales Units']} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="sales"
+                      stroke="#1890ff"
+                      strokeWidth={3}
+                      dot={{ fill: '#1890ff', strokeWidth: 2, r: 6 }}
+                      activeDot={{ r: 8 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="target"
+                      stroke="#52c41a"
+                      strokeWidth={2}
+                      strokeDasharray="5 5"
+                      dot={{ fill: '#52c41a', strokeWidth: 2, r: 4 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Card>
+            </Col>
+
+            <Col xs={24} lg={8}>
+              <Card
+                title={
+                  <>
+                    <PieChartOutlined /> Sales Distribution
+                  </>
+                }
+              >
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={data.productDistribution || []}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) =>
+                        `${name} ${(percent * 100).toFixed(0)}%`
+                      }
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {data.productDistribution?.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            [
+                              '#1890ff',
+                              '#52c41a',
+                              '#faad14',
+                              '#eb2f96',
+                              '#722ed1',
+                            ][index % 5]
+                          }
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Card>
+
+              <Card title="Performance Insights" style={{ marginTop: 16 }}>
+                <Space direction="vertical" size="small">
+                  <div>
+                    <Text strong>Growth Rate: </Text>
+                    <Text type={data.growthRate > 0 ? 'success' : 'danger'}>
+                      {data.growthRate > 0 ? '+' : ''}
+                      {data.growthRate || 0}%
+                    </Text>
+                  </div>
+                  <div>
+                    <Text strong>Best Month: </Text>
+                    <Text type="success">{data.bestMonth || 'N/A'}</Text>
+                  </div>
+                  <div>
+                    <Text strong>Peak Sales: </Text>
+                    <Text strong>{data.peakSales || 0} units</Text>
+                  </div>
+                  <div>
+                    <Text strong>Consistency: </Text>
+                    <Progress
+                      percent={data.consistencyScore || 0}
+                      size="small"
+                    />
+                  </div>
+                </Space>
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={16} style={{ marginTop: 16 }}>
+            <Col xs={24}>
+              <Card
+                title={
+                  <>
+                    <BarChartOutlined /> Monthly Comparison
+                  </>
+                }
+              >
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={data.monthlyComparison || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar
+                      dataKey="currentYear"
+                      fill="#1890ff"
+                      name="Current Year"
+                    />
+                    <Bar dataKey="lastYear" fill="#d9d9d9" name="Last Year" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Card>
+            </Col>
+          </Row>
         </TabPane>
       </Tabs>
     </div>
@@ -351,3 +501,6 @@ const Analytics = () => {
 };
 
 export default Analytics;
+
+
+
