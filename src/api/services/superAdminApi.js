@@ -5,7 +5,8 @@ export const superAdminAPI = {
   // Admin Management
   getAdmins: () => api.get('/users?role=admin'),
   createAdmin: (adminData) => api.post('/users/admin', adminData),
-  updateAdmin: (adminId, updateData) => api.put(`/users/${adminId}`, updateData),
+  updateAdmin: (adminId, updateData) =>
+    api.put(`/users/${adminId}`, updateData),
   deleteAdmin: (adminId) => api.delete(`/users/${adminId}`),
 
   // System-wide User Management
@@ -13,12 +14,14 @@ export const superAdminAPI = {
 
   getAllSalespersons: async (params = {}) => {
     const response = await api.get('/users', {
-      params: { role: 'salesperson', ...params }
+      params: { role: 'salesperson', ...params },
     });
     let users = response.data.users || [];
     if (Array.isArray(users)) {
       if (params.sort === 'performance') {
-        users = users.sort((a, b) => (b.performance || 0) - (a.performance || 0));
+        users = users.sort(
+          (a, b) => (b.performance || 0) - (a.performance || 0)
+        );
       }
       if (params.limit) {
         users = users.slice(0, params.limit);
@@ -38,14 +41,16 @@ export const superAdminAPI = {
 
   // Referral System Settings
   getReferralSettings: () => api.get('/settings/referrals'),
-  updateReferralSettings: (settingsData) => api.put('/settings/referrals', settingsData),
+  updateReferralSettings: (settingsData) =>
+    api.put('/settings/referrals', settingsData),
 
   // System Analytics
-  getSystemAnalytics: (filters = {}) => api.get('/analytics/system', { params: filters }),
+  getSystemAnalytics: (filters = {}) =>
+    api.get('/analytics/system', { params: filters }),
   exportSystemReport: (format = 'csv', filters = {}) =>
     api.get('/analytics/export', {
       params: { format, ...filters },
-      responseType: 'blob'
+      responseType: 'blob',
     }),
 
   // Audit Logs
@@ -53,16 +58,18 @@ export const superAdminAPI = {
   exportAuditLogs: (filters = {}) =>
     api.get('/audit/export', {
       params: filters,
-      responseType: 'blob'
+      responseType: 'blob',
     }),
 
   // System-wide Competitions
   getAllCompetitions: () => api.get('/competitions/all'),
-  createGlobalCompetition: (competitionData) => api.post('/competitions/global', competitionData),
+  createGlobalCompetition: (competitionData) =>
+    api.post('/competitions/global', competitionData),
 
   // System Settings
   getSystemSettings: () => api.get('/settings/system'),
-  updateSystemSettings: (settingsData) => api.put('/settings/system', settingsData),
+  updateSystemSettings: (settingsData) =>
+    api.put('/settings/system', settingsData),
 
   // 🆕 Sales Summary (Fix for SuperAdminDashboard)
   getSalesSummary: () => api.get('/sales/summary'),
@@ -70,8 +77,32 @@ export const superAdminAPI = {
   // 🆕 Recent Activities (Optional for Dashboard Feed)
   getRecentActivities: () => api.get('/activities/recent'),
 
+  // 🆕 All Users for Dashboard Stats
+  getAllUsers: () => api.get('/users/all'),
+
+  // 🆕 Chat Summary for Dashboard
+  getChatSummary: () => api.get('/chat/summary'),
+
+  // 🆕 Products Management (Super Admin can manage all)
+  getProducts: (params = {}) => api.get('/products', { params }),
+  getProduct: (productId) => api.get(`/products/${productId}`),
+  createProduct: (productData) => api.post('/products', productData),
+  updateProduct: (productId, productData) => api.put(`/products/${productId}`, productData),
+  deleteProduct: (productId) => api.delete(`/products/${productId}`),
+  toggleProductStatus: (productId) => api.patch(`/products/${productId}/toggle-status`),
+
+  // 🆕 Orders Management (Super Admin can manage all)
+  getOrders: (params = {}) => api.get('/orders', { params }),
+  getOrder: (orderId) => api.get(`/orders/${orderId}`),
+  createOrder: (orderData) => api.post('/orders', orderData),
+  updateOrder: (orderId, orderData) => api.put(`/orders/${orderId}`, orderData),
+  deleteOrder: (orderId) => api.delete(`/orders/${orderId}`),
+  updateOrderStatus: (orderId, statusData) => api.patch(`/orders/${orderId}/status`, statusData),
+  getAvailableProducts: () => api.get('/orders/products/available'),
+
   // Send message to user
-  sendMessage: (userId, messageData) => api.post(`/users/${userId}/message`, messageData),
+  sendMessage: (userId, messageData) =>
+    api.post(`/users/${userId}/message`, messageData),
 
   // Update user (generic)
   updateUser: (userId, updateData) => api.put(`/users/${userId}`, updateData),

@@ -30,7 +30,7 @@ import {
   SaveOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api from '../../api/services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -44,9 +44,21 @@ const AnalyticsTargets = ({ user }) => {
   const [salesData, setSalesData] = useState([]);
   const [dailyStats, setDailyStats] = useState({});
   const [_competitions, setCompetitions] = useState([]);
-  const [_dailyProgress, setDailyProgress] = useState({ current: 0, target: 30, percentage: 0 });
-  const [weeklyProgress, setWeeklyProgress] = useState({ current: 0, target: 210, percentage: 0 });
-  const [monthlyProgress, setMonthlyProgress] = useState({ current: 0, target: 900, percentage: 0 });
+  const [_dailyProgress, setDailyProgress] = useState({
+    current: 0,
+    target: 30,
+    percentage: 0,
+  });
+  const [weeklyProgress, setWeeklyProgress] = useState({
+    current: 0,
+    target: 210,
+    percentage: 0,
+  });
+  const [monthlyProgress, setMonthlyProgress] = useState({
+    current: 0,
+    target: 900,
+    percentage: 0,
+  });
   const [period, setPeriod] = useState('monthly');
   const [editingTargets, setEditingTargets] = useState(false);
   const [targetsForm] = Form.useForm();
@@ -54,8 +66,6 @@ const AnalyticsTargets = ({ user }) => {
   useEffect(() => {
     fetchAnalyticsData();
   }, [period]);
-
-
 
   const fetchAnalyticsData = async () => {
     setLoading(true);
@@ -67,7 +77,7 @@ const AnalyticsTargets = ({ user }) => {
         monthlyProgressRes,
         salesResponse,
         dailyResponse,
-    competitionsResponse,
+        competitionsResponse,
       ] = await Promise.all([
         api.targets.getTargets(),
         api.analytics.getProgress('', 'daily'),
@@ -95,25 +105,36 @@ const AnalyticsTargets = ({ user }) => {
         weekly: weeklyProgressRes.data,
         monthly: monthlyProgressRes.data,
       });
-      setSalesData(salesResponse.data || []);
+      setSalesData(salesResponse.data?.sales || salesResponse.data || []);
       setDailyStats(dailyResponse.data || {});
-  setCompetitions(competitionsResponse.data || []);
+      setCompetitions(competitionsResponse.data || []);
 
       // Set progress states for easier access
       setDailyProgress({
         current: dailyProgressRes.data?.totalUnits || 0,
-        target: dailyProgressRes.data?.target || targetsResponse.data?.daily || 30,
-        percentage: dailyProgressRes.data?.percentage ? parseFloat(dailyProgressRes.data.percentage) : 0,
+        target:
+          dailyProgressRes.data?.target || targetsResponse.data?.daily || 30,
+        percentage: dailyProgressRes.data?.percentage
+          ? parseFloat(dailyProgressRes.data.percentage)
+          : 0,
       });
       setWeeklyProgress({
         current: weeklyProgressRes.data?.totalUnits || 0,
-        target: weeklyProgressRes.data?.target || targetsResponse.data?.weekly || 210,
-        percentage: weeklyProgressRes.data?.percentage ? parseFloat(weeklyProgressRes.data.percentage) : 0,
+        target:
+          weeklyProgressRes.data?.target || targetsResponse.data?.weekly || 210,
+        percentage: weeklyProgressRes.data?.percentage
+          ? parseFloat(weeklyProgressRes.data.percentage)
+          : 0,
       });
       setMonthlyProgress({
         current: monthlyProgressRes.data?.totalUnits || 0,
-        target: monthlyProgressRes.data?.target || targetsResponse.data?.monthly || 900,
-        percentage: monthlyProgressRes.data?.percentage ? parseFloat(monthlyProgressRes.data.percentage) : 0,
+        target:
+          monthlyProgressRes.data?.target ||
+          targetsResponse.data?.monthly ||
+          900,
+        percentage: monthlyProgressRes.data?.percentage
+          ? parseFloat(monthlyProgressRes.data.percentage)
+          : 0,
       });
     } catch (_error) {
       console.error('Error fetching analytics data:', _error);
@@ -167,13 +188,19 @@ const AnalyticsTargets = ({ user }) => {
 
   // ---------------------- Performance Calculations ----------------------
   const getPerformanceStats = () => {
-  // Daily units: prefer backend daily progress, then dailyStats from analytics API
-  const dailyUnits = Number(progress?.daily?.totalUnits ?? dailyStats?.totalUnits ?? 0);
+    // Daily units: prefer backend daily progress, then dailyStats from analytics API
+    const dailyUnits = Number(
+      progress?.daily?.totalUnits ?? dailyStats?.totalUnits ?? 0
+    );
 
     // Helper to safely extract quantity from a sale record
     const extractQty = (sale) => {
       return Number(
-        sale?.quantity_sold ?? sale?.units ?? sale?.quantity ?? sale?.total_units ?? 0
+        sale?.quantity_sold ??
+          sale?.units ??
+          sale?.quantity ??
+          sale?.total_units ??
+          0
       );
     };
 
@@ -222,7 +249,9 @@ const AnalyticsTargets = ({ user }) => {
     const monthlyProgressResult = {
       current: monthlyUnits,
       target: monthlyTarget,
-      percentage: monthlyPercentageFromBackend || (monthlyTarget ? (monthlyUnits / monthlyTarget) * 100 : 0),
+      percentage:
+        monthlyPercentageFromBackend ||
+        (monthlyTarget ? (monthlyUnits / monthlyTarget) * 100 : 0),
     };
 
     return {
@@ -325,11 +354,7 @@ const AnalyticsTargets = ({ user }) => {
         </Col>
         <Col>
           <Space>
-            <Select
-              value={period}
-              onChange={setPeriod}
-              style={{ width: 120 }}
-            >
+            <Select value={period} onChange={setPeriod} style={{ width: 120 }}>
               <Option value="daily">Daily</Option>
               <Option value="weekly">Weekly</Option>
               <Option value="monthly">Monthly</Option>
@@ -353,13 +378,21 @@ const AnalyticsTargets = ({ user }) => {
               <Card>
                 <Statistic
                   title="Total Sales"
-                  value={progress?.monthly?.totalUnits ?? data.progress.totalUnits}
+                  value={
+                    progress?.monthly?.totalUnits ?? data.progress.totalUnits
+                  }
                   suffix={`/ ${data.targets.monthly}`}
                   valueStyle={{ color: '#1890ff' }}
                 />
                 <Progress
-                  percent={Math.round(performanceStats.monthlyProgress.percentage)}
-                  status={performanceStats.monthlyProgress.percentage >= 100 ? 'success' : 'active'}
+                  percent={Math.round(
+                    performanceStats.monthlyProgress.percentage
+                  )}
+                  status={
+                    performanceStats.monthlyProgress.percentage >= 100
+                      ? 'success'
+                      : 'active'
+                  }
                   style={{ marginTop: 8 }}
                 />
               </Card>
@@ -368,13 +401,17 @@ const AnalyticsTargets = ({ user }) => {
               <Card>
                 <Statistic
                   title="Total Revenue"
-                  value={progress?.monthly?.totalRevenue ?? data.progress.totalRevenue}
+                  value={
+                    progress?.monthly?.totalRevenue ??
+                    data.progress.totalRevenue
+                  }
                   prefix="₦"
                   valueStyle={{ color: '#52c41a' }}
                 />
                 <div style={{ marginTop: 8 }}>
                   <Text type="secondary">
-                    <ArrowUpOutlined style={{ color: '#52c41a' }} /> 12% from last month
+                    <ArrowUpOutlined style={{ color: '#52c41a' }} /> 12% from
+                    last month
                   </Text>
                 </div>
               </Card>
@@ -383,15 +420,17 @@ const AnalyticsTargets = ({ user }) => {
               <Card>
                 <Statistic
                   title="Success Rate"
-                  value={Math.round(performanceStats.monthlyProgress.percentage)}
+                  value={Math.round(
+                    performanceStats.monthlyProgress.percentage
+                  )}
                   suffix="%"
                   valueStyle={{
                     color:
                       performanceStats.monthlyProgress.percentage >= 75
                         ? '#52c41a'
                         : performanceStats.monthlyProgress.percentage >= 50
-                        ? '#faad14'
-                        : '#f5222d',
+                          ? '#faad14'
+                          : '#f5222d',
                   }}
                 />
                 <div style={{ marginTop: 8 }}>
@@ -467,42 +506,88 @@ const AnalyticsTargets = ({ user }) => {
                         <Form.Item
                           label="Daily Target"
                           name="daily"
-                          rules={[{ required: true, message: 'Please enter daily target' }]}
+                          rules={[
+                            {
+                              required: true,
+                              message: 'Please enter daily target',
+                            },
+                          ]}
                         >
-                          <InputNumber min={1} style={{ width: '100%' }} placeholder="Units" />
+                          <InputNumber
+                            min={1}
+                            style={{ width: '100%' }}
+                            placeholder="Units"
+                          />
                         </Form.Item>
                       </Col>
                       <Col span={8}>
                         <Form.Item
                           label="Weekly Target"
                           name="weekly"
-                          rules={[{ required: true, message: 'Please enter weekly target' }]}
+                          rules={[
+                            {
+                              required: true,
+                              message: 'Please enter weekly target',
+                            },
+                          ]}
                         >
-                          <InputNumber min={1} style={{ width: '100%' }} placeholder="Units" />
+                          <InputNumber
+                            min={1}
+                            style={{ width: '100%' }}
+                            placeholder="Units"
+                          />
                         </Form.Item>
                       </Col>
                       <Col span={8}>
                         <Form.Item
                           label="Monthly Target"
                           name="monthly"
-                          rules={[{ required: true, message: 'Please enter monthly target' }]}
+                          rules={[
+                            {
+                              required: true,
+                              message: 'Please enter monthly target',
+                            },
+                          ]}
                         >
-                          <InputNumber min={1} style={{ width: '100%' }} placeholder="Units" />
+                          <InputNumber
+                            min={1}
+                            style={{ width: '100%' }}
+                            placeholder="Units"
+                          />
                         </Form.Item>
                       </Col>
                     </Row>
                   </Form>
                 ) : (
-                  <Space direction="vertical" style={{ width: '100%' }} size="large">
+                  <Space
+                    direction="vertical"
+                    style={{ width: '100%' }}
+                    size="large"
+                  >
                     <Row gutter={16}>
                       <Col span={8}>
-                        <Statistic title="Daily Target" value={data.targets.daily} suffix="units" valueStyle={{ color: '#1890ff' }} />
+                        <Statistic
+                          title="Daily Target"
+                          value={data.targets.daily}
+                          suffix="units"
+                          valueStyle={{ color: '#1890ff' }}
+                        />
                       </Col>
                       <Col span={8}>
-                        <Statistic title="Weekly Target" value={data.targets.weekly} suffix="units" valueStyle={{ color: '#52c41a' }} />
+                        <Statistic
+                          title="Weekly Target"
+                          value={data.targets.weekly}
+                          suffix="units"
+                          valueStyle={{ color: '#52c41a' }}
+                        />
                       </Col>
                       <Col span={8}>
-                        <Statistic title="Monthly Target" value={data.targets.monthly} suffix="units" valueStyle={{ color: '#faad14' }} />
+                        <Statistic
+                          title="Monthly Target"
+                          value={data.targets.monthly}
+                          suffix="units"
+                          valueStyle={{ color: '#faad14' }}
+                        />
                       </Col>
                     </Row>
 
@@ -537,7 +622,9 @@ const AnalyticsTargets = ({ user }) => {
                   ]}
                   renderItem={(item) => (
                     <List.Item>
-                      <CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} />
+                      <CheckCircleOutlined
+                        style={{ color: '#52c41a', marginRight: 8 }}
+                      />
                       {item}
                     </List.Item>
                   )}
@@ -569,7 +656,9 @@ const AnalyticsTargets = ({ user }) => {
             />
 
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
-              <PieChartOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: 16 }} />
+              <PieChartOutlined
+                style={{ fontSize: '48px', color: '#1890ff', marginBottom: 16 }}
+              />
               <Title level={4} type="secondary">
                 Advanced Analytics Dashboard
               </Title>
@@ -585,3 +674,5 @@ const AnalyticsTargets = ({ user }) => {
 };
 
 export default AnalyticsTargets;
+
+

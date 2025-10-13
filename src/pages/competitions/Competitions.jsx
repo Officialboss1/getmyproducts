@@ -32,7 +32,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import api from '../../services/api';
+import api from '../../api/services/api';
 
 const { Title, Text } = Typography;
 
@@ -72,143 +72,165 @@ const Competitions = () => {
   // Modal state for "View Details"
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
-  const [selectedCompetitionLeaderboard, setSelectedCompetitionLeaderboard] = useState([]);
+  const [selectedCompetitionLeaderboard, setSelectedCompetitionLeaderboard] =
+    useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
 
   // general action loading map by competition id to control button spinners
   const [actionLoadingIds, setActionLoadingIds] = useState(new Set());
 
   // fetch competitions list
-  const fetchCompetitions = useCallback(async (preserveJoinedState = false) => {
-    setLoadingCompetitions(true);
-    try {
-      const res = await api.competitions.getCompetitions();
-      const comps = res.data || [];
-      setCompetitions(comps);
+  const fetchCompetitions = useCallback(
+    async (preserveJoinedState = false) => {
+      setLoadingCompetitions(true);
+      try {
+        const res = await api.competitions.getCompetitions();
+        const comps = res.data || [];
+        setCompetitions(comps);
 
-      // Get current user ID
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const currentUserId = currentUser._id || currentUser.id || currentUser.userId || null;
-      console.log('Current user ID for competition check:', currentUserId);
+        // Get current user ID
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const currentUserId =
+          currentUser._id || currentUser.id || currentUser.userId || null;
+        console.log('Current user ID for competition check:', currentUserId);
 
-      // Build joined ids set from populated participants data
-      const joinedSet = new Set();
+        // Build joined ids set from populated participants data
+        const joinedSet = new Set();
 
-      // If preserveJoinedState is true, start with current joined state
-      if (preserveJoinedState) {
-        setJoinedCompetitionIds((prev) => {
-          prev.forEach(id => joinedSet.add(id));
-          return prev;
-        });
-      }
-
-      comps.forEach((c) => {
-        const compId = String(c._id || c.id);
-
-        // Skip if already in joined set (from preserveJoinedState)
-        if (joinedSet.has(compId)) return;
-
-        // Debug: log participant data
-        console.log(`Competition ${compId} participants:`, c.participants);
-
-        // Check participants array (should be populated with user objects)
-        if (Array.isArray(c.participants) && currentUserId) {
-          const isJoined = c.participants.some((p) => {
-            if (!p) return false;
-            // Handle populated user objects
-            if (p.user && typeof p.user === 'object') {
-              return p.user._id === currentUserId || p.user.id === currentUserId;
-            }
-            // Handle user ID references
-            if (typeof p === 'string') {
-              return p === currentUserId;
-            }
-            // Handle participant objects with user field
-            return p.user === currentUserId || p._id === currentUserId || p.id === currentUserId || p.userId === currentUserId;
+        // If preserveJoinedState is true, start with current joined state
+        if (preserveJoinedState) {
+          setJoinedCompetitionIds((prev) => {
+            prev.forEach((id) => joinedSet.add(id));
+            return prev;
           });
-
-          console.log(`User ${currentUserId} joined competition ${compId}:`, isJoined);
-
-          if (isJoined) {
-            joinedSet.add(compId);
-          }
         }
-      });
 
-      console.log('Final joined competitions:', Array.from(joinedSet));
+        comps.forEach((c) => {
+          const compId = String(c._id || c.id);
 
-      // If preserveJoinedState is false, replace the joined state
-      // If preserveJoinedState is true, the joinedSet already contains the preserved state
-      if (!preserveJoinedState) {
-        setJoinedCompetitionIds(joinedSet);
+          // Skip if already in joined set (from preserveJoinedState)
+          if (joinedSet.has(compId)) return;
+
+          // Debug: log participant data
+          console.log(`Competition ${compId} participants:`, c.participants);
+
+          // Check participants array (should be populated with user objects)
+          if (Array.isArray(c.participants) && currentUserId) {
+            const isJoined = c.participants.some((p) => {
+              if (!p) return false;
+              // Handle populated user objects
+              if (p.user && typeof p.user === 'object') {
+                return (
+                  p.user._id === currentUserId || p.user.id === currentUserId
+                );
+              }
+              // Handle user ID references
+              if (typeof p === 'string') {
+                return p === currentUserId;
+              }
+              // Handle participant objects with user field
+              return (
+                p.user === currentUserId ||
+                p._id === currentUserId ||
+                p.id === currentUserId ||
+                p.userId === currentUserId
+              );
+            });
+
+            console.log(
+              `User ${currentUserId} joined competition ${compId}:`,
+              isJoined
+            );
+
+            if (isJoined) {
+              joinedSet.add(compId);
+            }
+          }
+        });
+
+        console.log('Final joined competitions:', Array.from(joinedSet));
+
+        // If preserveJoinedState is false, replace the joined state
+        // If preserveJoinedState is true, the joinedSet already contains the preserved state
+        if (!preserveJoinedState) {
+          setJoinedCompetitionIds(joinedSet);
+        }
+      } catch (err) {
+        console.error('Error fetching competitions:', err);
+        messageApi.error('Failed to load competitions.');
+      } finally {
+        setLoadingCompetitions(false);
       }
-    } catch (err) {
-      console.error('Error fetching competitions:', err);
-      messageApi.error('Failed to load competitions.');
-    } finally {
-      setLoadingCompetitions(false);
-    }
-  }, [messageApi]);
+    },
+    [messageApi]
+  );
 
   // fetch leaderboard for selected competition
-  const fetchCompetitionLeaderboard = useCallback(async (competitionId = selectedCompetitionId) => {
-    if (!competitionId) {
-      setWeeklyLeaderboard([]);
-      setUserRankOverall(null);
-      setTotalParticipantsOverall(0);
-      setWeeklyLoading(false);
-      return;
-    }
-
-    setWeeklyLoading(true);
-    try {
-      let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      let currentUserId = currentUser._id || currentUser.id || currentUser.userId || null;
-
-      // If currentUserId not found in localStorage try to fetch profile
-      if (!currentUserId) {
-        try {
-          const profileRes = await api.auth.getProfile();
-          const profile = profileRes.data || profileRes;
-          currentUserId = profile._id || profile.id || profile.userId || null;
-        } catch (e) {
-          // ignore profile fetch failure; we'll continue without userId
-        }
+  const fetchCompetitionLeaderboard = useCallback(
+    async (competitionId = selectedCompetitionId) => {
+      if (!competitionId) {
+        setWeeklyLeaderboard([]);
+        setUserRankOverall(null);
+        setTotalParticipantsOverall(0);
+        setWeeklyLoading(false);
+        return;
       }
 
-      const res = await api.competitions.getCompetitionLeaderboard(competitionId);
-      const data = res.data || [];
+      setWeeklyLoading(true);
+      try {
+        let currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        let currentUserId =
+          currentUser._id || currentUser.id || currentUser.userId || null;
 
-      // Annotate with user info and rank
-      const leaderboardData = data.map((item, index) => ({
-        ...item,
-        rank: index + 1,
-        name: item.user?.name || `${item.user?.firstName || ''} ${item.user?.lastName || ''}`.trim() || 'Unknown',
-        value: item.units || 0,
-        isCurrentUser: !!(currentUserId && item.user?._id === currentUserId),
-      }));
+        // If currentUserId not found in localStorage try to fetch profile
+        if (!currentUserId) {
+          try {
+            const profileRes = await api.auth.getProfile();
+            const profile = profileRes.data || profileRes;
+            currentUserId = profile._id || profile.id || profile.userId || null;
+          } catch (e) {
+            // ignore profile fetch failure; we'll continue without userId
+          }
+        }
 
-      // Find user's rank
-      const userEntry = leaderboardData.find(item => item.isCurrentUser);
-      const userRank = userEntry ? userEntry.rank : null;
+        const res =
+          await api.competitions.getCompetitionLeaderboard(competitionId);
+        const data = res.data || [];
 
-      // Total participants is the number of entries in the leaderboard
-      const totalParticipants = leaderboardData.length;
+        // Annotate with user info and rank
+        const leaderboardData = data.map((item, index) => ({
+          ...item,
+          rank: index + 1,
+          name:
+            item.user?.name ||
+            `${item.user?.firstName || ''} ${item.user?.lastName || ''}`.trim() ||
+            'Unknown',
+          value: item.units || 0,
+          isCurrentUser: !!(currentUserId && item.user?._id === currentUserId),
+        }));
 
-      setWeeklyLeaderboard(leaderboardData);
-      setUserRankOverall(userRank);
-      setTotalParticipantsOverall(totalParticipants);
-    } catch (err) {
-      console.error('Error fetching competition leaderboard:', err);
-      messageApi.error('Failed to load competition leaderboard.');
-      setWeeklyLeaderboard([]);
-      setUserRankOverall(null);
-      setTotalParticipantsOverall(0);
-    } finally {
-      setWeeklyLoading(false);
-    }
-  }, [selectedCompetitionId, messageApi]);
+        // Find user's rank
+        const userEntry = leaderboardData.find((item) => item.isCurrentUser);
+        const userRank = userEntry ? userEntry.rank : null;
 
+        // Total participants is the number of entries in the leaderboard
+        const totalParticipants = leaderboardData.length;
+
+        setWeeklyLeaderboard(leaderboardData);
+        setUserRankOverall(userRank);
+        setTotalParticipantsOverall(totalParticipants);
+      } catch (err) {
+        console.error('Error fetching competition leaderboard:', err);
+        messageApi.error('Failed to load competition leaderboard.');
+        setWeeklyLeaderboard([]);
+        setUserRankOverall(null);
+        setTotalParticipantsOverall(0);
+      } finally {
+        setWeeklyLoading(false);
+      }
+    },
+    [selectedCompetitionId, messageApi]
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -374,13 +396,13 @@ const Competitions = () => {
 
     return (
       <Button
-        type={isJoined ? "default" : "primary"}
+        type={isJoined ? 'default' : 'primary'}
         danger={isJoined}
         size="small"
         loading={loading}
-        onClick={() => isJoined ? leaveCompetition(id) : joinCompetition(id)}
+        onClick={() => (isJoined ? leaveCompetition(id) : joinCompetition(id))}
       >
-        {isJoined ? "Leave Competition" : "Join Competition"}
+        {isJoined ? 'Leave Competition' : 'Join Competition'}
       </Button>
     );
   };
@@ -405,9 +427,7 @@ const Competitions = () => {
       key: 'name',
       render: (user) => (
         <Space>
-          <Avatar size="small">
-            {(user?.name && user.name[0]) || 'A'}
-          </Avatar>
+          <Avatar size="small">{(user?.name && user.name[0]) || 'A'}</Avatar>
           <Text>{user?.name || 'Unknown'}</Text>
         </Space>
       ),
@@ -423,14 +443,15 @@ const Competitions = () => {
   // competition leaderboard list item rendering for sidebar
   const renderWeeklyListItem = (item, index) => {
     // Handle both competition leaderboard format and overall leaderboard format
-    const name = item.user?.name || item.name || item.username || item.agent || 'Unknown';
+    const name =
+      item.user?.name || item.name || item.username || item.agent || 'Unknown';
     const value = item.units || item.value || item.score || item.points || 0;
 
     return {
       title: (
         <Space>
           <Text strong>{name}</Text>
-          <Text type="secondary">· Rank #{item.rank || (index + 1)}</Text>
+          <Text type="secondary">· Rank #{item.rank || index + 1}</Text>
         </Space>
       ),
       description: (
@@ -451,10 +472,16 @@ const Competitions = () => {
             fontWeight: 'bold',
             fontSize: 14,
             background:
-              index === 0 ? '#ffd666' : index === 1 ? '#d9d9d9' : index === 2 ? '#ff9c6e' : '#f0f0f0',
+              index === 0
+                ? '#ffd666'
+                : index === 1
+                  ? '#d9d9d9'
+                  : index === 2
+                    ? '#ff9c6e'
+                    : '#f0f0f0',
           }}
         >
-          {item.rank || (index + 1)}
+          {item.rank || index + 1}
         </div>
       ),
       extra: index === 0 ? <FireOutlined style={{ color: '#ff4d4f' }} /> : null,
@@ -462,23 +489,23 @@ const Competitions = () => {
   };
 
   // Split active, past, and upcoming competitions using pure JS
-const now = new Date();
+  const now = new Date();
 
-const activeCompetitions = competitions.filter((c) => {
-  const start = new Date(c.startDate);
-  const end = new Date(c.endDate);
-  return now >= start && now <= end;
-});
+  const activeCompetitions = competitions.filter((c) => {
+    const start = new Date(c.startDate);
+    const end = new Date(c.endDate);
+    return now >= start && now <= end;
+  });
 
-const pastCompetitions = competitions.filter((c) => {
-  const end = new Date(c.endDate);
-  return now > end;
-});
+  const pastCompetitions = competitions.filter((c) => {
+    const end = new Date(c.endDate);
+    return now > end;
+  });
 
-const upcomingCompetitions = competitions.filter((c) => {
-  const start = new Date(c.startDate);
-  return now < start;
-});
+  const upcomingCompetitions = competitions.filter((c) => {
+    const start = new Date(c.startDate);
+    return now < start;
+  });
 
   // Build sidebar items (top 5) and include current user if not in top5 but has a rank
   const sidebarItems = (() => {
@@ -489,7 +516,12 @@ const upcomingCompetitions = competitions.filter((c) => {
       const found = (weeklyLeaderboard || []).find((it) => it.isCurrentUser);
       if (found) {
         // ensure top list contains found (it might already be present)
-        const present = items.find((x) => x.user?._id === found.user?._id || x._id === found._id || x.id === found.id);
+        const present = items.find(
+          (x) =>
+            x.user?._id === found.user?._id ||
+            x._id === found._id ||
+            x.id === found.id
+        );
         if (!present) items.push(found);
       }
     }
@@ -499,20 +531,23 @@ const upcomingCompetitions = competitions.filter((c) => {
   return (
     <div>
       {contextHolder}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24}>
           <Button
             type="text"
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/dashboard')}
             style={{ marginBottom: 16 }}
+            block
           >
             Back to Dashboard
           </Button>
           <Title level={2} style={{ margin: 0 }}>
             <TrophyOutlined /> Competitions
           </Title>
-          <Text type="secondary">Participate in sales competitions and climb the leaderboard</Text>
+          <Text type="secondary">
+            Participate in sales competitions and climb the leaderboard
+          </Text>
         </Col>
       </Row>
 
@@ -535,47 +570,90 @@ const upcomingCompetitions = competitions.filter((c) => {
                       style={{
                         cursor: 'pointer',
                         backgroundColor: isSelected ? '#f6ffed' : 'transparent',
-                        border: isSelected ? '1px solid #b7eb8f' : '1px solid transparent',
+                        border: isSelected
+                          ? '1px solid #b7eb8f'
+                          : '1px solid transparent',
                         borderRadius: 6,
-                        marginBottom: 8
+                        marginBottom: 8,
+                        padding: '12px',
                       }}
                       onClick={() => selectCompetition(id)}
                     >
                       <List.Item.Meta
-                        avatar={<TrophyOutlined style={{ fontSize: 24, color: '#faad14' }} />}
+                        avatar={
+                          <TrophyOutlined
+                            style={{ fontSize: 24, color: '#faad14' }}
+                          />
+                        }
                         title={
-                          <Space>
-                            <Text strong>{competition.name}</Text>
-                            <Tag color={status.color}>{status.text}</Tag>
-                            {isSelected && <Tag color="green">Selected</Tag>}
-                          </Space>
+                          <div style={{ marginBottom: 4 }}>
+                            <Space wrap>
+                              <Text strong style={{ fontSize: '16px' }}>
+                                {competition.name}
+                              </Text>
+                              <Tag color={status.color} size="small">
+                                {status.text}
+                              </Tag>
+                              {isSelected && (
+                                <Tag color="green" size="small">
+                                  Selected
+                                </Tag>
+                              )}
+                            </Space>
+                          </div>
                         }
                         description={
-                          <Space direction="vertical" size={0}>
-                            <Text type="secondary" ellipsis={{ tooltip: competition.description }}>
+                          <Space
+                            direction="vertical"
+                            size={2}
+                            style={{ width: '100%' }}
+                          >
+                            <Text
+                              type="secondary"
+                              style={{ fontSize: '14px', lineHeight: '1.4' }}
+                            >
                               {competition.description}
                             </Text>
-                            <Text type="secondary">
-                              <CalendarOutlined /> {timeRemaining}
-                            </Text>
-                            <Text type="secondary">Prize: {competition.prize || 'Bonus & Recognition'}</Text>
+                            <Space size={8} wrap>
+                              <Text
+                                type="secondary"
+                                style={{ fontSize: '12px' }}
+                              >
+                                <CalendarOutlined /> {timeRemaining}
+                              </Text>
+                              <Text
+                                type="secondary"
+                                style={{ fontSize: '12px' }}
+                              >
+                                Prize:{' '}
+                                {competition.prize || 'Bonus & Recognition'}
+                              </Text>
+                            </Space>
                           </Space>
                         }
                       />
-                      <Space>
-                        {renderActionForCompetition(competition)}
-                        <Button
-                          type="link"
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent triggering competition selection
-                            openDetails(id);
-                          }}
-                          key={`view-${id}`}
+                      <div style={{ marginTop: 8 }}>
+                        <Space
+                          direction="vertical"
+                          size={4}
+                          style={{ width: '100%' }}
                         >
-                          View Details
-                        </Button>
-                      </Space>
+                          {renderActionForCompetition(competition)}
+                          <Button
+                            type="link"
+                            size="small"
+                            block
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent triggering competition selection
+                              openDetails(id);
+                            }}
+                            key={`view-${id}`}
+                            style={{ padding: 0, height: 'auto' }}
+                          >
+                            View Details
+                          </Button>
+                        </Space>
+                      </div>
                     </List.Item>
                   );
                 }}
@@ -597,13 +675,20 @@ const upcomingCompetitions = competitions.filter((c) => {
               <List
                 dataSource={upcomingCompetitions}
                 renderItem={(competition) => {
-                  const start = dayjs(competition.startDate).format('MMM D, YYYY');
+                  const start = dayjs(competition.startDate).format(
+                    'MMM D, YYYY'
+                  );
                   const id = String(competition._id || competition.id);
                   return (
                     <List.Item
                       key={id}
                       actions={[
-                        <Button type="link" size="small" onClick={() => openDetails(id)} key={`view-up-${id}`}>
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() => openDetails(id)}
+                          key={`view-up-${id}`}
+                        >
                           View Details
                         </Button>,
                       ]}
@@ -611,7 +696,9 @@ const upcomingCompetitions = competitions.filter((c) => {
                       <List.Item.Meta
                         avatar={<CalendarOutlined style={{ fontSize: 20 }} />}
                         title={<Text strong>{competition.name}</Text>}
-                        description={<Text type="secondary">Starts on {start}</Text>}
+                        description={
+                          <Text type="secondary">Starts on {start}</Text>
+                        }
                       />
                     </List.Item>
                   );
@@ -634,7 +721,12 @@ const upcomingCompetitions = competitions.filter((c) => {
                     <List.Item
                       key={id}
                       actions={[
-                        <Button type="link" size="small" onClick={() => openDetails(id)} key={`view-past-${id}`}>
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={() => openDetails(id)}
+                          key={`view-past-${id}`}
+                        >
                           View Details
                         </Button>,
                       ]}
@@ -642,7 +734,9 @@ const upcomingCompetitions = competitions.filter((c) => {
                       <List.Item.Meta
                         avatar={<TeamOutlined style={{ fontSize: 20 }} />}
                         title={<Text strong>{competition.name}</Text>}
-                        description={<Text type="secondary">Ended on {end}</Text>}
+                        description={
+                          <Text type="secondary">Ended on {end}</Text>
+                        }
                       />
                     </List.Item>
                   );
@@ -660,10 +754,11 @@ const upcomingCompetitions = competitions.filter((c) => {
             title={
               <Space>
                 <CrownOutlined />
-                {selectedCompetitionId ?
-                  competitions.find(c => String(c._id || c.id) === selectedCompetitionId)?.name + ' Leaderboard' :
-                  'Competition Leaderboard'
-                }
+                {selectedCompetitionId
+                  ? competitions.find(
+                      (c) => String(c._id || c.id) === selectedCompetitionId
+                    )?.name + ' Leaderboard'
+                  : 'Competition Leaderboard'}
               </Space>
             }
           >
@@ -687,11 +782,28 @@ const upcomingCompetitions = competitions.filter((c) => {
                   dataSource={sidebarItems}
                   renderItem={(item, index) => {
                     const itm = renderWeeklyListItem(item, index);
-                    const itmKey = item.user?._id || item.userId || item.id || item._id || `leader-${index}`;
+                    const itmKey =
+                      item.user?._id ||
+                      item.userId ||
+                      item.id ||
+                      item._id ||
+                      `leader-${index}`;
                     const isYou = item.isCurrentUser === true;
                     return (
-                      <List.Item key={itmKey} extra={itm.extra} style={isYou ? { background: '#f6ffed', borderRadius: 6 } : {}}>
-                        <List.Item.Meta avatar={itm.avatar} title={itm.title} description={itm.description} />
+                      <List.Item
+                        key={itmKey}
+                        extra={itm.extra}
+                        style={
+                          isYou
+                            ? { background: '#f6ffed', borderRadius: 6 }
+                            : {}
+                        }
+                      >
+                        <List.Item.Meta
+                          avatar={itm.avatar}
+                          title={itm.title}
+                          description={itm.description}
+                        />
                       </List.Item>
                     );
                   }}
@@ -700,8 +812,8 @@ const upcomingCompetitions = competitions.filter((c) => {
 
                 <Divider />
 
-                <Row gutter={16}>
-                  <Col span={12}>
+                <Row gutter={[8, 8]}>
+                  <Col xs={24} sm={12}>
                     <Statistic
                       title="Your Position"
                       value={userRankOverall || '-'}
@@ -709,7 +821,7 @@ const upcomingCompetitions = competitions.filter((c) => {
                       valueStyle={{ color: '#1890ff' }}
                     />
                   </Col>
-                  <Col span={12}>
+                  <Col xs={24} sm={12}>
                     <Statistic
                       title="Total Participants"
                       value={totalParticipantsOverall}
@@ -718,7 +830,11 @@ const upcomingCompetitions = competitions.filter((c) => {
                   </Col>
                 </Row>
 
-                <Button type="link" style={{ width: '100%', marginTop: 16 }} onClick={() => navigate('/leaderboard')}>
+                <Button
+                  type="link"
+                  style={{ width: '100%', marginTop: 16 }}
+                  onClick={() => navigate('/leaderboard')}
+                >
                   View Full Leaderboard
                 </Button>
               </>
@@ -726,25 +842,40 @@ const upcomingCompetitions = competitions.filter((c) => {
           </Card>
 
           <Card title="Competition Tips" style={{ marginTop: 16 }}>
-            <Space direction="vertical" size={12} style={{ width: '100%' }}>
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
               <div>
-                <Text strong>🏆 Focus on Priority Products</Text>
+                <Text strong style={{ fontSize: '14px' }}>
+                  🏆 Focus on Priority Products
+                </Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: '13px', lineHeight: '1.4' }}
+                >
                   Some competitions focus on specific products
                 </Text>
               </div>
               <div>
-                <Text strong>📈 Consistent Performance</Text>
+                <Text strong style={{ fontSize: '14px' }}>
+                  📈 Consistent Performance
+                </Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: '13px', lineHeight: '1.4' }}
+                >
                   Daily sales contribute to weekly rankings
                 </Text>
               </div>
               <div>
-                <Text strong>👥 Team Work</Text>
+                <Text strong style={{ fontSize: '14px' }}>
+                  👥 Team Work
+                </Text>
                 <br />
-                <Text type="secondary" style={{ fontSize: '12px' }}>
+                <Text
+                  type="secondary"
+                  style={{ fontSize: '13px', lineHeight: '1.4' }}
+                >
                   Coordinate with your team for better results
                 </Text>
               </div>
@@ -755,83 +886,133 @@ const upcomingCompetitions = competitions.filter((c) => {
 
       {/* Details Modal */}
       <Modal
-        title={selectedCompetition ? selectedCompetition.name : 'Competition Details'}
+        title={
+          selectedCompetition ? selectedCompetition.name : 'Competition Details'
+        }
         open={detailsModalVisible}
         onCancel={closeDetails}
         footer={[
-          <Button key="close" onClick={closeDetails}>
+          <Button key="close" onClick={closeDetails} block>
             Close
           </Button>,
         ]}
-        width={800}
+        width="90%"
+        style={{ maxWidth: 800, top: 20 }}
+        bodyStyle={{ padding: '16px' }}
       >
         {detailsLoading || !selectedCompetition ? (
           <Spin />
         ) : (
           <>
-            <Row gutter={16}>
-              <Col span={16}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} lg={16}>
                 <Space direction="vertical" style={{ width: '100%' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Text strong style={{ fontSize: 16 }}>{selectedCompetition.name}</Text>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}
+                  >
+                    <Text strong style={{ fontSize: 16 }}>
+                      {selectedCompetition.name}
+                    </Text>
                     {(() => {
                       const st = getCompetitionStatus(selectedCompetition);
                       return <Tag color={st.color}>{st.text}</Tag>;
                     })()}
                   </div>
-                  <Text type="secondary">{selectedCompetition.description}</Text>
+                  <Text type="secondary" style={{ fontSize: '14px' }}>
+                    {selectedCompetition.description}
+                  </Text>
                   <div>
-                    <Text>
-                      <CalendarOutlined /> {dayjs(selectedCompetition.startDate).format('MMM D, YYYY')} -{' '}
+                    <Text style={{ fontSize: '14px' }}>
+                      <CalendarOutlined />{' '}
+                      {dayjs(selectedCompetition.startDate).format(
+                        'MMM D, YYYY'
+                      )}{' '}
+                      -{' '}
                       {dayjs(selectedCompetition.endDate).format('MMM D, YYYY')}
                     </Text>
                   </div>
                   <div>
-                    <Text>Prize: {selectedCompetition.prize || 'Bonus & Recognition'}</Text>
+                    <Text style={{ fontSize: '14px' }}>
+                      Prize:{' '}
+                      {selectedCompetition.prize || 'Bonus & Recognition'}
+                    </Text>
                   </div>
                   <Divider />
                   <Text strong>Top 5 Leaderboard</Text>
                   <Table
                     dataSource={selectedCompetitionLeaderboard}
                     columns={modalColumns}
-                    rowKey={(r, idx) => r.userId || r.id || r._id || `row-${idx}`}
+                    rowKey={(r, idx) =>
+                      r.userId || r.id || r._id || `row-${idx}`
+                    }
                     pagination={false}
                     style={{ marginTop: 12 }}
+                    scroll={{ x: 400 }}
+                    size="small"
                   />
                 </Space>
               </Col>
 
-              <Col span={8}>
+              <Col xs={24} lg={8}>
                 <Card size="small" title="Competition Stats">
                   <Statistic
                     title="Participants"
-                    value={selectedCompetition.participantsCount || selectedCompetition.participants?.length || '-'}
+                    value={
+                      selectedCompetition.participantsCount ||
+                      selectedCompetition.participants?.length ||
+                      '-'
+                    }
                   />
                   <Divider />
                   <Statistic
                     title="Your Status"
-                    value={joinedCompetitionIds.has(String(selectedCompetition._id || selectedCompetition.id)) ? 'Joined' : 'Not Joined'}
+                    value={
+                      joinedCompetitionIds.has(
+                        String(
+                          selectedCompetition._id || selectedCompetition.id
+                        )
+                      )
+                        ? 'Joined'
+                        : 'Not Joined'
+                    }
                   />
                 </Card>
 
-                <Space direction="vertical" style={{ marginTop: 12 }}>
+                <div style={{ marginTop: 12 }}>
                   {(() => {
-                    const compId = String(selectedCompetition._id || selectedCompetition.id);
+                    const compId = String(
+                      selectedCompetition._id || selectedCompetition.id
+                    );
                     const isJoined = joinedCompetitionIds.has(compId);
                     const st = getCompetitionStatus(selectedCompetition);
 
                     if (isJoined) {
-                      return <Button onClick={() => leaveCompetition(compId)}>Leave Competition</Button>;
+                      return (
+                        <Button onClick={() => leaveCompetition(compId)} block>
+                          Leave Competition
+                        </Button>
+                      );
                     }
 
                     // Do not allow joining if competition not active
                     return (
-                      <Button type="primary" disabled={st.status !== 'active'} onClick={() => joinCompetition(compId)}>
+                      <Button
+                        type="primary"
+                        disabled={st.status !== 'active'}
+                        onClick={() => joinCompetition(compId)}
+                        block
+                      >
                         Join Competition
                       </Button>
                     );
                   })()}
-                </Space>
+                </div>
               </Col>
             </Row>
           </>
@@ -842,3 +1023,6 @@ const upcomingCompetitions = competitions.filter((c) => {
 };
 
 export default Competitions;
+
+
+

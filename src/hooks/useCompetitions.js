@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/adminApi';
+import { adminAPI } from '../../src/api/services/adminApi';
 
 export const useCompetitions = () => {
   const [competitions, setCompetitions] = useState([]);
@@ -26,17 +26,24 @@ export const useCompetitions = () => {
       await fetchCompetitions(); // Refresh the list
       return response.data;
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Failed to create competition');
+      throw new Error(
+        err.response?.data?.message || 'Failed to create competition'
+      );
     }
   };
 
   const updateCompetition = async (competitionId, competitionData) => {
     try {
-      const response = await adminAPI.updateCompetition(competitionId, competitionData);
+      const response = await adminAPI.updateCompetition(
+        competitionId,
+        competitionData
+      );
       await fetchCompetitions(); // Refresh the list
       return response.data;
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Failed to update competition');
+      throw new Error(
+        err.response?.data?.message || 'Failed to update competition'
+      );
     }
   };
 
@@ -45,7 +52,9 @@ export const useCompetitions = () => {
       await adminAPI.deleteCompetition(competitionId);
       await fetchCompetitions(); // Refresh the list
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Failed to delete competition');
+      throw new Error(
+        err.response?.data?.message || 'Failed to delete competition'
+      );
     }
   };
 
@@ -63,3 +72,6 @@ export const useCompetitions = () => {
     refetch: fetchCompetitions,
   };
 };
+
+
+

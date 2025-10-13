@@ -40,7 +40,7 @@ const CustomerDashboard = ({ user }) => {
     try {
       // TODO: Replace with actual API call
       // const response = await customerAPI.getCustomerDashboard(user._id);
-      
+
       // Mock data for demonstration
       const mockDashboardData = {
         totalPurchases: 15,
@@ -53,16 +53,52 @@ const CustomerDashboard = ({ user }) => {
           team: 'North Region',
         },
         recentPurchases: [
-          { id: 1, product: 'iPhone 15', price: 999, date: '2025-10-01', status: 'delivered' },
-          { id: 2, product: 'AirPods Pro', price: 249, date: '2025-09-28', status: 'delivered' },
-          { id: 3, product: 'MacBook Case', price: 49, date: '2025-09-25', status: 'shipped' },
+          {
+            id: 1,
+            product: 'iPhone 15',
+            price: 999,
+            date: '2025-10-01',
+            status: 'delivered',
+          },
+          {
+            id: 2,
+            product: 'AirPods Pro',
+            price: 249,
+            date: '2025-09-28',
+            status: 'delivered',
+          },
+          {
+            id: 3,
+            product: 'MacBook Case',
+            price: 49,
+            date: '2025-09-25',
+            status: 'shipped',
+          },
         ],
       };
 
       const mockNotifications = [
-        { id: 1, title: 'New Offer Available', message: 'Get 20% off on your next purchase', date: '2025-10-02', read: false },
-        { id: 2, title: 'Reward Points Added', message: 'You earned 50 points from your recent purchase', date: '2025-10-01', read: true },
-        { id: 3, title: 'Order Shipped', message: 'Your MacBook Case has been shipped', date: '2025-09-26', read: true },
+        {
+          id: 1,
+          title: 'New Offer Available',
+          message: 'Get 20% off on your next purchase',
+          date: '2025-10-02',
+          read: false,
+        },
+        {
+          id: 2,
+          title: 'Reward Points Added',
+          message: 'You earned 50 points from your recent purchase',
+          date: '2025-10-01',
+          read: true,
+        },
+        {
+          id: 3,
+          title: 'Order Shipped',
+          message: 'Your MacBook Case has been shipped',
+          date: '2025-09-26',
+          read: true,
+        },
       ];
 
       setDashboardData(mockDashboardData);
@@ -141,7 +177,9 @@ const CustomerDashboard = ({ user }) => {
                   suffix={card.suffix}
                   valueStyle={{ color: card.color }}
                 />
-                <div style={{ marginTop: 8, fontSize: '20px', color: card.color }}>
+                <div
+                  style={{ marginTop: 8, fontSize: '20px', color: card.color }}
+                >
                   {card.icon}
                 </div>
               </Card>
@@ -163,7 +201,13 @@ const CustomerDashboard = ({ user }) => {
               {dashboardData?.referrer ? (
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <Text strong>Referred by:</Text>
-                  <div style={{ padding: '12px', background: '#f5f5f5', borderRadius: '6px' }}>
+                  <div
+                    style={{
+                      padding: '12px',
+                      background: '#f5f5f5',
+                      borderRadius: '6px',
+                    }}
+                  >
                     <Text strong>{dashboardData.referrer.name}</Text>
                     <br />
                     <Text type="secondary">{dashboardData.referrer.email}</Text>
@@ -171,7 +215,8 @@ const CustomerDashboard = ({ user }) => {
                     <Tag color="blue">{dashboardData.referrer.team}</Tag>
                   </div>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
-                    You were referred by this salesperson. Thank them for introducing you to our services!
+                    You were referred by this salesperson. Thank them for
+                    introducing you to our services!
                   </Text>
                 </Space>
               ) : (
@@ -186,24 +231,22 @@ const CustomerDashboard = ({ user }) => {
 
             {/* Quick Actions */}
             <Card title="Quick Actions" style={{ marginTop: 16 }}>
-              <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                <Button 
-                  type="primary" 
+              <Space
+                direction="vertical"
+                style={{ width: '100%' }}
+                size="middle"
+              >
+                <Button
+                  type="primary"
                   block
                   onClick={() => navigate('/customer/purchases')}
                 >
                   View Purchase History
                 </Button>
-                <Button 
-                  block
-                  onClick={() => navigate('/customer/rewards')}
-                >
+                <Button block onClick={() => navigate('/customer/rewards')}>
                   Redeem Rewards
                 </Button>
-                <Button 
-                  block
-                  onClick={() => navigate('/customer/support')}
-                >
+                <Button block onClick={() => navigate('/customer/support')}>
                   Get Support
                 </Button>
               </Space>
@@ -220,8 +263,8 @@ const CustomerDashboard = ({ user }) => {
                 </Space>
               }
               extra={
-                <Button 
-                  type="link" 
+                <Button
+                  type="link"
                   onClick={() => navigate('/customer/purchases')}
                 >
                   View All
@@ -233,8 +276,8 @@ const CustomerDashboard = ({ user }) => {
                 renderItem={(item) => (
                   <List.Item
                     actions={[
-                      <Button 
-                        type="link" 
+                      <Button
+                        type="link"
                         icon={<EyeOutlined />}
                         onClick={() => navigate(`/customer/purchases`)}
                       >
@@ -268,12 +311,14 @@ const CustomerDashboard = ({ user }) => {
                 <Space>
                   <BellOutlined />
                   Recent Notifications
-                  <Tag color="blue">{notifications.filter(n => !n.read).length}</Tag>
+                  <Tag color="blue">
+                    {notifications.filter((n) => !n.read).length}
+                  </Tag>
                 </Space>
               }
               extra={
-                <Button 
-                  type="link" 
+                <Button
+                  type="link"
                   onClick={() => navigate('/customer/notifications')}
                 >
                   View All
@@ -288,7 +333,11 @@ const CustomerDashboard = ({ user }) => {
                       title={
                         <Space>
                           <Text>{item.title}</Text>
-                          {!item.read && <Tag color="red" size="small">New</Tag>}
+                          {!item.read && (
+                            <Tag color="red" size="small">
+                              New
+                            </Tag>
+                          )}
                         </Space>
                       }
                       description={
@@ -310,7 +359,11 @@ const CustomerDashboard = ({ user }) => {
 
             {/* Active Offers */}
             <Card title="Active Offers" style={{ marginTop: 16 }}>
-              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <Space
+                direction="vertical"
+                style={{ width: '100%' }}
+                size="middle"
+              >
                 <Alert
                   message="20% Off Next Purchase"
                   description="Use code: WELCOME20"
@@ -323,8 +376,8 @@ const CustomerDashboard = ({ user }) => {
                   type="success"
                   showIcon
                 />
-                <Button 
-                  type="link" 
+                <Button
+                  type="link"
                   onClick={() => navigate('/customer/rewards')}
                   style={{ padding: 0 }}
                 >

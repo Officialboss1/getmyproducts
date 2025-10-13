@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usersAPI } from '../services/api';
+import { usersAPI } from '../../src/api/services/api';
 
 export const useUserProfile = (userId) => {
   const [profile, setProfile] = useState(null);
@@ -19,9 +19,12 @@ export const useUserProfile = (userId) => {
       // Determine if current user can edit this profile
       // This is a basic check - in a real app, this might come from the backend
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-      const canEditProfile = checkEditPermissions(currentUser.role, response.data.user.role, currentUser._id === id);
+      const canEditProfile = checkEditPermissions(
+        currentUser.role,
+        response.data.user.role,
+        currentUser._id === id
+      );
       setCanEdit(canEditProfile);
-
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch profile');
       console.error('Error fetching profile:', err);
@@ -52,7 +55,7 @@ export const useUserProfile = (userId) => {
 
     try {
       await usersAPI.deleteAvatar(userId);
-      setProfile(prev => ({ ...prev, avatar: null }));
+      setProfile((prev) => ({ ...prev, avatar: null }));
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete avatar');
       throw err;
@@ -83,3 +86,6 @@ const checkEditPermissions = (currentUserRole, targetUserRole, isOwn) => {
   }
   return isOwn;
 };
+
+
+

@@ -31,7 +31,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import { useCompetitions } from '../../hooks/useCompetitions';
-import api from '../../services/api';
+import api from '../../api/services/api';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -83,7 +83,10 @@ const CompetitionsManagement = () => {
       };
       delete competitionData.dateRange;
 
-  await updateCompetition(editingCompetition._id || editingCompetition.id, competitionData);
+      await updateCompetition(
+        editingCompetition._id || editingCompetition.id,
+        competitionData
+      );
       message.success('Competition updated successfully!');
       setModalVisible(false);
       setEditingCompetition(null);
@@ -95,7 +98,7 @@ const CompetitionsManagement = () => {
 
   const handleDeleteCompetition = async (competitionId) => {
     try {
-  await deleteCompetition(competitionId);
+      await deleteCompetition(competitionId);
       message.success('Competition deleted successfully!');
     } catch (_error) {
       message.error(_error.message || 'Failed to delete competition');
@@ -107,7 +110,9 @@ const CompetitionsManagement = () => {
     // fetch leaderboard from API
     (async () => {
       try {
-        const res = await api.competitions.getCompetitionLeaderboard(competition._id || competition.id);
+        const res = await api.competitions.getCompetitionLeaderboard(
+          competition._id || competition.id
+        );
         setLeaderboardData(res.data || []);
       } catch (err) {
         console.error('Failed to load leaderboard', err);
@@ -159,7 +164,7 @@ const CompetitionsManagement = () => {
     const now = dayjs();
     const end = dayjs(endDate);
     const days = end.diff(now, 'day');
-    
+
     if (days > 0) {
       return `${days} day${days > 1 ? 's' : ''} remaining`;
     } else {
@@ -236,7 +241,9 @@ const CompetitionsManagement = () => {
       render: (_, record) => (
         <Space>
           <UserOutlined />
-          <Text>{(record.participants && record.participants.length) || 0}</Text>
+          <Text>
+            {(record.participants && record.participants.length) || 0}
+          </Text>
         </Space>
       ),
     },
@@ -269,11 +276,7 @@ const CompetitionsManagement = () => {
             cancelText="No"
           >
             <Tooltip title="Delete Competition">
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-              />
+              <Button type="link" danger icon={<DeleteOutlined />} />
             </Tooltip>
           </Popconfirm>
         </Space>
@@ -283,8 +286,12 @@ const CompetitionsManagement = () => {
 
   const stats = {
     total: competitions.length,
-    active: competitions.filter(comp => getCompetitionStatus(comp).status === 'active').length,
-    upcoming: competitions.filter(comp => getCompetitionStatus(comp).status === 'upcoming').length,
+    active: competitions.filter(
+      (comp) => getCompetitionStatus(comp).status === 'active'
+    ).length,
+    upcoming: competitions.filter(
+      (comp) => getCompetitionStatus(comp).status === 'upcoming'
+    ).length,
     participants: 156, // Mock data
   };
 
@@ -362,7 +369,7 @@ const CompetitionsManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} competitions`,
           }}
         />
@@ -370,7 +377,9 @@ const CompetitionsManagement = () => {
 
       {/* Create/Edit Competition Modal */}
       <Modal
-        title={editingCompetition ? 'Edit Competition' : 'Create New Competition'}
+        title={
+          editingCompetition ? 'Edit Competition' : 'Create New Competition'
+        }
         open={modalVisible}
         onCancel={handleModalCancel}
         footer={null}
@@ -379,20 +388,23 @@ const CompetitionsManagement = () => {
         <Form
           form={form}
           layout="vertical"
-          onFinish={editingCompetition ? handleUpdateCompetition : handleCreateCompetition}
+          onFinish={
+            editingCompetition
+              ? handleUpdateCompetition
+              : handleCreateCompetition
+          }
         >
           <Form.Item
             label="Competition Name"
             name="name"
-            rules={[{ required: true, message: 'Please enter competition name' }]}
+            rules={[
+              { required: true, message: 'Please enter competition name' },
+            ]}
           >
             <Input placeholder="e.g., Summer Sales Challenge" />
           </Form.Item>
 
-          <Form.Item
-            label="Description"
-            name="description"
-          >
+          <Form.Item label="Description" name="description">
             <TextArea
               rows={3}
               placeholder="Describe the competition goals and rules..."
@@ -415,10 +427,7 @@ const CompetitionsManagement = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                label="Product (Optional)"
-                name="product_id"
-              >
+              <Form.Item label="Product (Optional)" name="product_id">
                 <Select placeholder="Select specific product">
                   <Option value="prod_1">iPhone 15</Option>
                   <Option value="prod_2">MacBook Air</Option>
@@ -431,22 +440,26 @@ const CompetitionsManagement = () => {
           <Form.Item
             label="Competition Period"
             name="dateRange"
-            rules={[{ required: true, message: 'Please select competition period' }]}
+            rules={[
+              { required: true, message: 'Please select competition period' },
+            ]}
           >
             <DatePicker.RangePicker
               style={{ width: '100%' }}
-              disabledDate={(current) => current && current < dayjs().startOf('day')}
+              disabledDate={(current) =>
+                current && current < dayjs().startOf('day')
+              }
             />
           </Form.Item>
 
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">
-                {editingCompetition ? 'Update Competition' : 'Create Competition'}
+                {editingCompetition
+                  ? 'Update Competition'
+                  : 'Create Competition'}
               </Button>
-              <Button onClick={handleModalCancel}>
-                Cancel
-              </Button>
+              <Button onClick={handleModalCancel}>Cancel</Button>
             </Space>
           </Form.Item>
         </Form>
@@ -464,41 +477,56 @@ const CompetitionsManagement = () => {
         ]}
         width={600}
       >
-          <List
-            dataSource={leaderboardData}
-            renderItem={(item, idx) => (
-              <List.Item
-                actions={[
-                  <Text strong key="value">
-                    {(selectedCompetition?.metric === 'revenue' ? item.revenue : item.units) || 0} {selectedCompetition?.metric === 'revenue' ? '$' : 'units'}
-                  </Text>,
-                ]}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <div style={{
+        <List
+          dataSource={leaderboardData}
+          renderItem={(item, idx) => (
+            <List.Item
+              actions={[
+                <Text strong key="value">
+                  {(selectedCompetition?.metric === 'revenue'
+                    ? item.revenue
+                    : item.units) || 0}{' '}
+                  {selectedCompetition?.metric === 'revenue' ? '$' : 'units'}
+                </Text>,
+              ]}
+            >
+              <List.Item.Meta
+                avatar={
+                  <div
+                    style={{
                       width: 32,
                       height: 32,
                       borderRadius: '50%',
-                      background: idx === 0 ? '#ffd666' : idx === 1 ? '#d9d9d9' : idx === 2 ? '#ff9c6e' : '#f0f0f0',
+                      background:
+                        idx === 0
+                          ? '#ffd666'
+                          : idx === 1
+                            ? '#d9d9d9'
+                            : idx === 2
+                              ? '#ff9c6e'
+                              : '#f0f0f0',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 'bold',
                       fontSize: '14px',
-                    }}>
-                      {item.rank || idx + 1}
-                    </div>
-                  }
-                  title={item.user?.name || item.user?.email || 'Unknown'}
-                  description={`${item.units || 0} units`}
-                />
-              </List.Item>
-            )}
-          />
+                    }}
+                  >
+                    {item.rank || idx + 1}
+                  </div>
+                }
+                title={item.user?.name || item.user?.email || 'Unknown'}
+                description={`${item.units || 0} units`}
+              />
+            </List.Item>
+          )}
+        />
       </Modal>
     </div>
   );
 };
 
 export default CompetitionsManagement;
+
+
+

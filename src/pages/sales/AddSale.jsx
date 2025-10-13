@@ -13,6 +13,7 @@ import {
   Spin,
   Alert,
   Divider,
+  Space,
 } from 'antd';
 import {
   ShoppingCartOutlined,
@@ -20,7 +21,7 @@ import {
   SaveOutlined,
 } from '@ant-design/icons';
 import { data, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import api from '../../api/services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -30,6 +31,7 @@ const AddSale = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   // const [customers, setCustomers] = useState([]);
 
@@ -39,30 +41,35 @@ const AddSale = () => {
   }, []);
 
   const fetchProducts = async () => {
+    setProductsLoading(true);
     try {
       const response = await api.products.getProducts();
-      setProducts(response.data || []);
+      console.log('Products response:', response); // Debug log
+      const productsData = response.data?.products || response.data || [];
+      setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error) {
       console.error('Error fetching products:', error);
       message.error('Failed to load products');
+      setProducts([]); // Ensure products is always an array
+    } finally {
+      setProductsLoading(false);
     }
   };
 
-// const fetchCustomers = async () => {
-//   try {
-//     const response = await api.customers.getCustomers(); // ✅ replace with your real API
-//     setCustomers(response.data || []);
-//   } catch (error) {
-//     console.error('Error fetching customers:', error);
-//     message.error('Failed to load customers');
-//   }
-// };
-
+  // const fetchCustomers = async () => {
+  //   try {
+  //     const response = await api.customers.getCustomers(); // ✅ replace with your real API
+  //     setCustomers(response.data || []);
+  //   } catch (error) {
+  //     console.error('Error fetching customers:', error);
+  //     message.error('Failed to load customers');
+  //   }
+  // };
 
   const handleProductChange = (productId) => {
-    const product = products.find(p => p._id === productId);
+    const product = products.find((p) => p._id === productId);
     setSelectedProduct(product);
-    
+
     // Auto-calculate total if quantity is already set
     const quantity = form.getFieldValue('quantity_sold');
     if (quantity && product) {
@@ -91,16 +98,15 @@ const AddSale = () => {
       };
 
       await api.sales.addSale(saleData);
-      
+
       message.success('Sale recorded successfully!');
       form.resetFields();
       setSelectedProduct(null);
-      
+
       // Optionally redirect to sales history
       setTimeout(() => {
         navigate('/sales/history');
       }, 1500);
-      
     } catch (error) {
       console.error('Error adding sale:', error);
       message.error(error.message || 'Failed to record sale');
@@ -116,13 +122,14 @@ const AddSale = () => {
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Button 
-            type="text" 
-            icon={<ArrowLeftOutlined />} 
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24}>
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/dashboard')}
             style={{ marginBottom: 16 }}
+            block
           >
             Back to Dashboard
           </Button>
@@ -160,12 +167,15 @@ const AddSale = () => {
                       placeholder="Select product"
                       onChange={handleProductChange}
                       showSearch
+                      loading={productsLoading}
                       optionFilterProp="children"
                       filterOption={(input, option) =>
-                        option.children.toLowerCase().includes(input.toLowerCase())
+                        option.children
+                          .toLowerCase()
+                          .includes(input.toLowerCase())
                       }
                     >
-                      {products.map(product => (
+                      {Array.isArray(products) && products.map((product) => (
                         <Option key={product._id} value={product._id}>
                           {product.name} - ₦{product.current_price}
                         </Option>
@@ -180,7 +190,11 @@ const AddSale = () => {
                     name="quantity_sold"
                     rules={[
                       { required: true, message: 'Please enter quantity' },
-                      { type: 'number', min: 1, message: 'Quantity must be at least 1' },
+                      {
+                        type: 'number',
+                        min: 1,
+                        message: 'Quantity must be at least 1',
+                      },
                     ]}
                   >
                     <InputNumber
@@ -199,7 +213,10 @@ const AddSale = () => {
                     label="Customer Email"
                     name="receiver_email"
                     rules={[
-                      { required: true, message: 'Please enter customer email' },
+                      {
+                        required: true,
+                        message: 'Please enter customer email',
+                      },
                       { type: 'email', message: 'Please enter a valid email' },
                     ]}
                   >
@@ -208,24 +225,20 @@ const AddSale = () => {
                 </Col>
 
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Total Amount"
-                    name="total_amount"
-                  >
+                  <Form.Item label="Total Amount" name="total_amount">
                     <InputNumber
                       style={{ width: '100%' }}
                       disabled
-                      formatter={value => `₦ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                      parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                      formatter={(value) =>
+                        `₦ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                      }
+                      parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
                     />
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item
-                label="Notes (Optional)"
-                name="notes"
-              >
+              <Form.Item label="Notes (Optional)" name="notes">
                 <Input.TextArea
                   placeholder="Add any additional notes about this sale..."
                   rows={4}
@@ -233,23 +246,26 @@ const AddSale = () => {
               </Form.Item>
 
               <Form.Item>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
-                  icon={<SaveOutlined />}
-                  loading={loading}
-                  size="large"
-                >
-                  Record Sale
-                </Button>
-                
-                <Button 
-                  style={{ marginLeft: 8 }}
-                  onClick={() => form.resetFields()}
-                  disabled={loading}
-                >
-                  Reset Form
-                </Button>
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    icon={<SaveOutlined />}
+                    loading={loading}
+                    size="large"
+                    block
+                  >
+                    Record Sale
+                  </Button>
+
+                  <Button
+                    onClick={() => form.resetFields()}
+                    disabled={loading}
+                    block
+                  >
+                    Reset Form
+                  </Button>
+                </Space>
               </Form.Item>
             </Form>
           </Card>
@@ -304,3 +320,5 @@ const AddSale = () => {
 };
 
 export default AddSale;
+
+

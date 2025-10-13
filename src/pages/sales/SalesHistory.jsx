@@ -26,7 +26,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
-import api from '../../services/api';
+import api from '../../api/services/api';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -41,6 +41,7 @@ const SalesHistory = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateRange, setDateRange] = useState([]);
   const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(false);
   const [productFilter, setProductFilter] = useState('all');
 
   useEffect(() => {
@@ -56,14 +57,14 @@ const SalesHistory = () => {
     setLoading(true);
     try {
       // Get user from localStorage (as in dashboard)
-      const user = JSON.parse(localStorage.getItem("user") || "null");
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
       let response;
-      if (user && user.role === "salesperson") {
+      if (user && user.role === 'salesperson') {
         response = await api.sales.getSales({ userId: user._id });
       } else {
         response = await api.sales.getSales();
       }
-      setSales(response.data || []);
+      setSales(response.data?.sales || response.data || []);
     } catch (error) {
       console.error('Error fetching sales:', error);
       message.error('Failed to load sales history');
@@ -73,11 +74,17 @@ const SalesHistory = () => {
   };
 
   const fetchProducts = async () => {
+    setProductsLoading(true);
     try {
       const response = await api.products.getProducts();
-      setProducts(response.data || []);
+      console.log('Products response:', response); // Debug log
+      const productsData = response.data?.products || response.data || [];
+      setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setProducts([]); // Ensure products is always an array
+    } finally {
+      setProductsLoading(false);
     }
   };
 
@@ -86,11 +93,13 @@ const SalesHistory = () => {
 
     // Search filter
     if (searchText) {
-      filtered = filtered.filter(sale =>
-        sale.receiver_email?.toLowerCase().includes(searchText.toLowerCase()) ||
-        sale.product_id?.toLowerCase().includes(searchText.toLowerCase())
+      filtered = filtered.filter(
+        (sale) =>
+          sale.receiver_email
+            ?.toLowerCase()
+            .includes(searchText.toLowerCase()) ||
+          sale.product_id?.toLowerCase().includes(searchText.toLowerCase())
       );
-      
     }
 
     // Status filter
@@ -101,7 +110,7 @@ const SalesHistory = () => {
     // Date range filter
     if (dateRange && dateRange.length === 2) {
       const [start, end] = dateRange;
-      filtered = filtered.filter(sale => {
+      filtered = filtered.filter((sale) => {
         const saleDate = dayjs(sale.createdAt);
         return saleDate.isAfter(start) && saleDate.isBefore(end.add(1, 'day'));
       });
@@ -109,7 +118,7 @@ const SalesHistory = () => {
 
     // Product filter
     if (productFilter !== 'all') {
-      filtered = filtered.filter(sale => sale.product_id === productFilter);
+      filtered = filtered.filter((sale) => sale.product_id === productFilter);
     }
 
     setFilteredSales(filtered);
@@ -124,14 +133,16 @@ const SalesHistory = () => {
       sorter: (a, b) => dayjs(a.createdAt).unix() - dayjs(b.createdAt).unix(),
     },
     {
-  title: 'Product',
-  dataIndex: 'product_id',
-  key: 'product',
-  render: (productId) => {
-    const matched = products.find(p => p._id === (productId?._id || productId));
-    return <span>{matched ? matched.name : String(productId || '')}</span>;
-  },
-},
+      title: 'Product',
+      dataIndex: 'product_id',
+      key: 'product',
+      render: (productId) => {
+        const matched = products.find(
+          (p) => p._id === (productId?._id || productId)
+        );
+        return <span>{matched ? matched.name : String(productId || '')}</span>;
+      },
+    },
     {
       title: 'Customer',
       dataIndex: 'receiver_email',
@@ -147,26 +158,20 @@ const SalesHistory = () => {
       dataIndex: 'quantity_sold',
       key: 'quantity',
       align: 'center',
-      render: (quantity) => (
-        <Tag color="blue">{quantity} units</Tag>
-      ),
+      render: (quantity) => <Tag color="blue">{quantity} units</Tag>,
     },
     {
       title: 'Amount',
       dataIndex: 'total_amount',
       key: 'amount',
       align: 'right',
-      render: (amount) => (
-        <Text strong>₦{amount?.toLocaleString()}</Text>
-      ),
+      render: (amount) => <Text strong>₦{amount?.toLocaleString()}</Text>,
       sorter: (a, b) => (a.total_amount || 0) - (b.total_amount || 0),
     },
     {
       title: 'Status',
       key: 'status',
-      render: () => (
-        <Tag color="green">Completed</Tag>
-      ),
+      render: () => <Tag color="green">Completed</Tag>,
     },
     {
       title: 'Actions',
@@ -175,17 +180,17 @@ const SalesHistory = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
-            <Button 
-              type="text" 
-              icon={<EyeOutlined />} 
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
               size="small"
               onClick={() => viewSaleDetails(record)}
             />
           </Tooltip>
           <Tooltip title="Edit Sale">
-            <Button 
-              type="text" 
-              icon={<EditOutlined />} 
+            <Button
+              type="text"
+              icon={<EditOutlined />}
               size="small"
               onClick={() => editSale(record)}
             />
@@ -207,9 +212,15 @@ const SalesHistory = () => {
 
   const getStats = () => {
     const totalSales = filteredSales.length;
-    const totalRevenue = filteredSales.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
-    const totalUnits = filteredSales.reduce((sum, sale) => sum + (sale.quantity_sold || 0), 0);
-    
+    const totalRevenue = filteredSales.reduce(
+      (sum, sale) => sum + (sale.total_amount || 0),
+      0
+    );
+    const totalUnits = filteredSales.reduce(
+      (sum, sale) => sum + (sale.quantity_sold || 0),
+      0
+    );
+
     return { totalSales, totalRevenue, totalUnits };
   };
 
@@ -217,30 +228,34 @@ const SalesHistory = () => {
 
   return (
     <div>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Button 
-            type="text" 
-            icon={<ArrowLeftOutlined />} 
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={12}>
+          <Button
+            type="text"
+            icon={<ArrowLeftOutlined />}
             onClick={() => navigate('/dashboard')}
             style={{ marginBottom: 16 }}
+            block
           >
             Back to Dashboard
           </Button>
           <Title level={2} style={{ margin: 0 }}>
             <ShoppingCartOutlined /> Sales History
           </Title>
-          <Text type="secondary">
-            View and manage your sales transactions
-          </Text>
+          <Text type="secondary">View and manage your sales transactions</Text>
         </Col>
-        <Col>
-          <Button 
-            type="primary" 
-            onClick={() => navigate('/sales/add')}
-          >
-            Add New Sale
-          </Button>
+        <Col xs={24} md={12}>
+          <Row justify="end">
+            <Col xs={24} sm={12} md={8}>
+              <Button
+                type="primary"
+                onClick={() => navigate('/sales/add')}
+                block
+              >
+                Add New Sale
+              </Button>
+            </Col>
+          </Row>
         </Col>
       </Row>
 
@@ -294,9 +309,10 @@ const SalesHistory = () => {
               style={{ width: '100%' }}
               value={productFilter}
               onChange={setProductFilter}
+              loading={productsLoading}
             >
               <Option value="all">All Products</Option>
-              {products.map(product => (
+              {Array.isArray(products) && products.map((product) => (
                 <Option key={product._id} value={product._id}>
                   {product.name}
                 </Option>
@@ -311,14 +327,11 @@ const SalesHistory = () => {
             />
           </Col>
           <Col xs={24} md={6}>
-            <Space>
-              <Button 
-                icon={<FilterOutlined />}
-                onClick={filterSales}
-              >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button icon={<FilterOutlined />} onClick={filterSales} block>
                 Apply Filters
               </Button>
-              <Button 
+              <Button
                 icon={<ReloadOutlined />}
                 onClick={() => {
                   setSearchText('');
@@ -326,6 +339,7 @@ const SalesHistory = () => {
                   setDateRange([]);
                   setProductFilter('all');
                 }}
+                block
               >
                 Reset
               </Button>
@@ -345,7 +359,7 @@ const SalesHistory = () => {
             pageSize: 10,
             showSizeChanger: true,
             showQuickJumper: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} sales`,
           }}
           scroll={{ x: 800 }}
@@ -356,3 +370,5 @@ const SalesHistory = () => {
 };
 
 export default SalesHistory;
+
+

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { superAdminAPI } from '../services/superAdminApi';
+import { superAdminAPI } from '../../src/api/services/superAdminApi';
 
 export const useReferralSettings = () => {
   const [settings, setSettings] = useState(null);
@@ -13,7 +13,9 @@ export const useReferralSettings = () => {
       const response = await superAdminAPI.getReferralSettings();
       setSettings(response.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to fetch referral settings');
+      setError(
+        err.response?.data?.message || 'Failed to fetch referral settings'
+      );
       console.error('Error fetching referral settings:', err);
     } finally {
       setLoading(false);
@@ -27,7 +29,9 @@ export const useReferralSettings = () => {
       setSettings(response.data);
       return response.data;
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Failed to update referral settings');
+      throw new Error(
+        err.response?.data?.message || 'Failed to update referral settings'
+      );
     } finally {
       setLoading(false);
     }
@@ -45,3 +49,6 @@ export const useReferralSettings = () => {
     refetch: fetchSettings,
   };
 };
+
+
+

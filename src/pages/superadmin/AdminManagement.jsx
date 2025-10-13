@@ -37,7 +37,13 @@ const AdminManagement = () => {
   const [form] = Form.useForm();
   const [searchText, setSearchText] = useState('');
 
-  const { admins = [], loading, createAdmin, updateAdmin, deleteAdmin } = useAdmins();
+  const {
+    admins = [],
+    loading,
+    createAdmin,
+    updateAdmin,
+    deleteAdmin,
+  } = useAdmins();
 
   const handleCreateAdmin = async (values) => {
     try {
@@ -97,13 +103,16 @@ const AdminManagement = () => {
   };
 
   // Filter only users with role 'admin'
-  const adminUsers = admins.filter(user => (user.role || '').toLowerCase() === 'admin');
+  const adminUsers = admins.filter(
+    (user) => (user.role || '').toLowerCase() === 'admin'
+  );
 
   // Search filter
-  const filteredAdmins = adminUsers.filter(admin =>
-    admin.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    admin.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    admin.email?.toLowerCase().includes(searchText.toLowerCase())
+  const filteredAdmins = adminUsers.filter(
+    (admin) =>
+      admin.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      admin.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      admin.email?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const columns = [
@@ -112,13 +121,30 @@ const AdminManagement = () => {
       key: 'name',
       render: (_, record) => (
         <Space>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            {record.firstName?.[0]}{record.lastName?.[0]}
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#1890ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
+            {record.firstName?.[0]}
+            {record.lastName?.[0]}
           </div>
           <div>
-            <Text strong>{record.firstName} {record.lastName}</Text>
+            <Text strong>
+              {record.firstName} {record.lastName}
+            </Text>
             <br />
-            <Text type="secondary" style={{ fontSize: '12px' }}>{record.email}</Text>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {record.email}
+            </Text>
           </div>
         </Space>
       ),
@@ -134,7 +160,15 @@ const AdminManagement = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Tag color={status === 'active' ? 'green' : status === 'inactive' ? 'red' : 'orange'}>
+        <Tag
+          color={
+            status === 'active'
+              ? 'green'
+              : status === 'inactive'
+                ? 'red'
+                : 'orange'
+          }
+        >
           {status?.toUpperCase()}
         </Tag>
       ),
@@ -148,7 +182,12 @@ const AdminManagement = () => {
     {
       title: 'Last Active',
       key: 'lastActive',
-      render: (_, record) => record.lastOrder ? new Date(record.lastOrder).toLocaleDateString() : <Text type="secondary">Never</Text>,
+      render: (_, record) =>
+        record.lastOrder ? (
+          new Date(record.lastOrder).toLocaleDateString()
+        ) : (
+          <Text type="secondary">Never</Text>
+        ),
     },
     {
       title: 'Actions',
@@ -156,7 +195,11 @@ const AdminManagement = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="Edit Admin">
-            <Button type="link" icon={<EditOutlined />} onClick={() => openEditModal(record)} />
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() => openEditModal(record)}
+            />
           </Tooltip>
           <Popconfirm
             title="Delete Admin"
@@ -194,7 +237,11 @@ const AdminManagement = () => {
               onChange={(e) => setSearchText(e.target.value)}
               style={{ width: 200 }}
             />
-            <Button type="primary" icon={<UserAddOutlined />} onClick={openCreateModal}>
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
+              onClick={openCreateModal}
+            >
               Add Admin
             </Button>
           </Space>
@@ -210,7 +257,8 @@ const AdminManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} admins`,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} admins`,
           }}
         />
       </Card>
@@ -229,23 +277,67 @@ const AdminManagement = () => {
         >
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="First Name" name="firstName" rules={[{ required: true, message: 'Please enter first name' }]}>
+              <Form.Item
+                label="First Name"
+                name="firstName"
+                rules={[{ required: true, message: 'Please enter first name' }]}
+              >
                 <Input placeholder="First Name" prefix={<UserAddOutlined />} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Last Name" name="lastName" rules={[{ required: true, message: 'Please enter last name' }]}>
+              <Form.Item
+                label="Last Name"
+                name="lastName"
+                rules={[{ required: true, message: 'Please enter last name' }]}
+              >
                 <Input placeholder="Last Name" />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item label="Email" name="email" rules={[{ required: true, message: 'Please enter email' }, { type: 'email', message: 'Please enter a valid email' }]}>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[
+              { required: true, message: 'Please enter email' },
+              { type: 'email', message: 'Please enter a valid email' },
+            ]}
+          >
             <Input placeholder="Email address" prefix={<MailOutlined />} />
           </Form.Item>
 
-          <Form.Item label="Password" name="password" rules={[{ required: true, message: 'Please enter password' }, { min: 6, message: 'Password must be at least 6 characters' }]}>
+          <Form.Item
+            label="Password"
+            name="password"
+            rules={[
+              { required: true, message: 'Please enter password' },
+              {
+                pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                message: 'Password must be at least 8 characters with uppercase, lowercase, number, and special character'
+              },
+            ]}
+          >
             <Input.Password placeholder="Password" />
+          </Form.Item>
+
+          <Form.Item
+            label="Confirm Password"
+            name="confirmPassword"
+            dependencies={['password']}
+            rules={[
+              { required: true, message: 'Please confirm your password' },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Passwords do not match'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Confirm Password" />
           </Form.Item>
 
           <Form.Item label="Phone" name="phone">
@@ -254,19 +346,34 @@ const AdminManagement = () => {
 
           <Form.Item label="Status" name="status" initialValue="active">
             <Select>
-              <Option value="active" key="status-active">Active</Option>
-              <Option value="inactive" key="status-inactive">Inactive</Option>
-              <Option value="pending" key="status-pending">Pending</Option>
+              <Option value="active" key="status-active">
+                Active
+              </Option>
+              <Option value="inactive" key="status-inactive">
+                Inactive
+              </Option>
+              <Option value="pending" key="status-pending">
+                Pending
+              </Option>
             </Select>
           </Form.Item>
 
+          <Form.Item label="Role" name="role" initialValue="admin" style={{ display: 'none' }}>
+            <Input value="admin" disabled />
+          </Form.Item>
+
           <Form.Item label="Notes" name="notes">
-            <TextArea rows={3} placeholder="Additional notes about this admin..." />
+            <TextArea
+              rows={3}
+              placeholder="Additional notes about this admin..."
+            />
           </Form.Item>
 
           <Form.Item>
             <Space>
-              <Button type="primary" htmlType="submit">{editingAdmin ? 'Update Admin' : 'Create Admin'}</Button>
+              <Button type="primary" htmlType="submit">
+                {editingAdmin ? 'Update Admin' : 'Create Admin'}
+              </Button>
               <Button onClick={handleModalCancel}>Cancel</Button>
             </Space>
           </Form.Item>
