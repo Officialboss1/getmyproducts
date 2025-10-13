@@ -1,5 +1,4 @@
 # /.github/workflows/deploy.yml
-
 name: Build and Deploy Frontend to Production
 
 on:
@@ -28,15 +27,15 @@ jobs:
       - name: 🏗️ Build Production Frontend
         run: npm run build
 
-      - name: 🚀 Deploy to FTP Server
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      # 🔥 SFTP deployment step — replaces the old FTP action
+      - name: 🚀 Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/
-
-          server-dir: /home/okwe/getmyproducts.com/
-          protocol: ftp
           port: 22
-          dangerous-clean-slate: true
+          local_path: ./dist/
+          remote_path: /home/okwe/getmyproducts.com/
+          sftp_only: true
+          delete_remote_files: true
