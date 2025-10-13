@@ -34,8 +34,8 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./build/
-          server-dir: /home/silversp/salestracker.silverspringbank.com/Mike
+          local-dir: ./dist/
+          server-dir: /home/okwe/getmyproducts.com/
           protocol: ftp
-          port: 21
+          port: 22
           dangerous-clean-slate: true
