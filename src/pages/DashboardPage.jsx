@@ -93,6 +93,8 @@ const DashboardPage = () => {
 
   const role = user?.role;
 
+  console.log('DashboardPage: user:', user, 'role:', role);
+
   useEffect(() => {
     const validateAuth = () => {
       try {
@@ -249,17 +251,8 @@ const DashboardPage = () => {
             label: 'Team Management',
             icon: <TeamOutlined />,
             children: [
-              { key: '/salespersons', label: 'Sales Team' },
-              { key: '/targets', label: 'Targets' },
-            ],
-          },
-          {
-            key: 'product-order-submenu',
-            label: 'Product & Orders',
-            icon: <ShoppingOutlined />,
-            children: [
-              { key: '/products', label: 'Product Management' },
-              { key: '/orders', label: 'Order Management' },
+              { key: "/salespersons", label: "Sales Team" },
+              { key: "/targets", label: "Targets" },
             ],
           },
           {

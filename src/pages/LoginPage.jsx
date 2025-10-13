@@ -55,8 +55,10 @@ const LoginPage = () => {
         throw new Error('Missing required user data or token');
       }
 
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      console.log('LoginPage: Stored user:', user, 'token:', token);
 
       message.success('Login successful!');
       navigate('/dashboard');
