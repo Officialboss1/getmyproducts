@@ -29,7 +29,7 @@ import {
   ExclamationCircleOutlined,
 } from '@ant-design/icons';
 // customerAPI currently unused in this mock page; keep placeholder
-// import { customerAPI } from '../../services/customerApi';
+// import { customerAPI } from '../../api/customerApi';
 import dayjs from 'dayjs';
 
 const { Title, Text } = Typography;
@@ -56,7 +56,7 @@ const Support = ({ _user }) => {
     try {
       // TODO: Replace with actual API call
       // const response = await customerAPI.getSupportTickets(user._id);
-      
+
       // Mock data for demonstration
       const mockTickets = [
         {
@@ -66,13 +66,15 @@ const Support = ({ _user }) => {
           category: 'technical',
           priority: 'high',
           status: 'open',
-          description: 'The iPhone I purchased last week is not turning on. I\'ve tried charging it but no response.',
+          description:
+            "The iPhone I purchased last week is not turning on. I've tried charging it but no response.",
           createdAt: '2025-10-02T14:30:00Z',
           updatedAt: '2025-10-02T14:30:00Z',
           replies: [
             {
               id: '1',
-              message: 'Thank you for reaching out. We\'re sorry to hear about the issue with your iPhone. Our technical team will look into this and get back to you within 24 hours.',
+              message:
+                "Thank you for reaching out. We're sorry to hear about the issue with your iPhone. Our technical team will look into this and get back to you within 24 hours.",
               sender: 'Support Agent',
               createdAt: '2025-10-02T15:00:00Z',
               isCustomer: false,
@@ -86,20 +88,22 @@ const Support = ({ _user }) => {
           category: 'shipping',
           priority: 'medium',
           status: 'in_progress',
-          description: 'My order #ORD-003 was supposed to be delivered yesterday but it\'s still showing as shipped.',
+          description:
+            "My order #ORD-003 was supposed to be delivered yesterday but it's still showing as shipped.",
           createdAt: '2025-09-28T10:15:00Z',
           updatedAt: '2025-09-29T09:30:00Z',
           replies: [
             {
               id: '1',
-              message: 'We apologize for the delay. We\'re tracking your package and it appears there was a weather-related delay. Expected delivery is now tomorrow.',
+              message:
+                "We apologize for the delay. We're tracking your package and it appears there was a weather-related delay. Expected delivery is now tomorrow.",
               sender: 'Support Agent',
               createdAt: '2025-09-28T14:20:00Z',
               isCustomer: false,
             },
             {
               id: '2',
-              message: 'Thank you for the update. I\'ll wait until tomorrow.',
+              message: "Thank you for the update. I'll wait until tomorrow.",
               sender: 'You',
               createdAt: '2025-09-28T16:45:00Z',
               isCustomer: true,
@@ -113,27 +117,31 @@ const Support = ({ _user }) => {
           category: 'returns',
           priority: 'medium',
           status: 'resolved',
-          description: 'I would like to return the AirPods I purchased as they don\'t fit comfortably.',
+          description:
+            "I would like to return the AirPods I purchased as they don't fit comfortably.",
           createdAt: '2025-09-20T11:30:00Z',
           updatedAt: '2025-09-22T16:15:00Z',
           replies: [
             {
               id: '1',
-              message: 'We\'re sorry to hear the AirPods don\'t fit comfortably. We\'ve initiated the return process and sent you a return shipping label.',
+              message:
+                "We're sorry to hear the AirPods don't fit comfortably. We've initiated the return process and sent you a return shipping label.",
               sender: 'Support Agent',
               createdAt: '2025-09-20T14:00:00Z',
               isCustomer: false,
             },
             {
               id: '2',
-              message: 'Thank you for the quick response. I\'ve shipped the item back today.',
+              message:
+                "Thank you for the quick response. I've shipped the item back today.",
               sender: 'You',
               createdAt: '2025-09-21T10:30:00Z',
               isCustomer: true,
             },
             {
               id: '3',
-              message: 'We\'ve received your return and processed your refund. It should appear in your account within 3-5 business days.',
+              message:
+                "We've received your return and processed your refund. It should appear in your account within 3-5 business days.",
               sender: 'Support Agent',
               createdAt: '2025-09-22T16:15:00Z',
               isCustomer: false,
@@ -156,10 +164,10 @@ const Support = ({ _user }) => {
     try {
       // TODO: Replace with actual API call
       // await customerAPI.createSupportTicket(user._id, values);
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       const newTicket = {
         id: Date.now().toString(),
         ticketNumber: `TKT-${String(tickets.length + 1).padStart(3, '0')}`,
@@ -170,7 +178,7 @@ const Support = ({ _user }) => {
         replies: [],
       };
 
-      setTickets(prev => [newTicket, ...prev]);
+      setTickets((prev) => [newTicket, ...prev]);
       message.success('Support ticket submitted successfully!');
       form.resetFields();
       setActiveTab('history');
@@ -193,7 +201,7 @@ const Support = ({ _user }) => {
         isCustomer: true,
       };
 
-      const updatedTickets = tickets.map(ticket =>
+      const updatedTickets = tickets.map((ticket) =>
         ticket.id === selectedTicket.id
           ? {
               ...ticket,
@@ -205,7 +213,7 @@ const Support = ({ _user }) => {
       );
 
       setTickets(updatedTickets);
-      setSelectedTicket(prev => ({
+      setSelectedTicket((prev) => ({
         ...prev,
         replies: [...prev.replies, newReply],
         updatedAt: new Date().toISOString(),
@@ -241,9 +249,21 @@ const Support = ({ _user }) => {
   const getStatusTag = (status) => {
     const statusConfig = {
       open: { color: 'blue', text: 'Open', icon: <ClockCircleOutlined /> },
-      in_progress: { color: 'orange', text: 'In Progress', icon: <ClockCircleOutlined /> },
-      resolved: { color: 'green', text: 'Resolved', icon: <CheckCircleOutlined /> },
-      closed: { color: 'default', text: 'Closed', icon: <CheckCircleOutlined /> },
+      in_progress: {
+        color: 'orange',
+        text: 'In Progress',
+        icon: <ClockCircleOutlined />,
+      },
+      resolved: {
+        color: 'green',
+        text: 'Resolved',
+        icon: <CheckCircleOutlined />,
+      },
+      closed: {
+        color: 'default',
+        text: 'Closed',
+        icon: <CheckCircleOutlined />,
+      },
     };
     const config = statusConfig[status] || statusConfig.open;
     return (
@@ -333,11 +353,11 @@ const Support = ({ _user }) => {
     },
   ];
 
-  const openTickets = tickets.filter(ticket => 
-    ticket.status === 'open' || ticket.status === 'in_progress'
+  const openTickets = tickets.filter(
+    (ticket) => ticket.status === 'open' || ticket.status === 'in_progress'
   );
-  const resolvedTickets = tickets.filter(ticket => 
-    ticket.status === 'resolved' || ticket.status === 'closed'
+  const resolvedTickets = tickets.filter(
+    (ticket) => ticket.status === 'resolved' || ticket.status === 'closed'
   );
 
   return (
@@ -375,7 +395,9 @@ const Support = ({ _user }) => {
                   <Form.Item
                     label="Category"
                     name="category"
-                    rules={[{ required: true, message: 'Please select a category' }]}
+                    rules={[
+                      { required: true, message: 'Please select a category' },
+                    ]}
                   >
                     <Select placeholder="Select issue category">
                       <Option value="technical">Technical Support</Option>
@@ -390,7 +412,9 @@ const Support = ({ _user }) => {
                   <Form.Item
                     label="Priority"
                     name="priority"
-                    rules={[{ required: true, message: 'Please select priority' }]}
+                    rules={[
+                      { required: true, message: 'Please select priority' },
+                    ]}
                     initialValue="medium"
                   >
                     <Select>
@@ -414,7 +438,9 @@ const Support = ({ _user }) => {
               <Form.Item
                 label="Description"
                 name="description"
-                rules={[{ required: true, message: 'Please describe your issue' }]}
+                rules={[
+                  { required: true, message: 'Please describe your issue' },
+                ]}
               >
                 <TextArea
                   rows={6}
@@ -425,7 +451,12 @@ const Support = ({ _user }) => {
               </Form.Item>
 
               <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading} icon={<PlusOutlined />}>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  loading={loading}
+                  icon={<PlusOutlined />}
+                >
                   Submit Ticket
                 </Button>
               </Form.Item>
@@ -475,7 +506,10 @@ const Support = ({ _user }) => {
                   pagination={{ pageSize: 10 }}
                 />
               </TabPane>
-              <TabPane tab={`Resolved (${resolvedTickets.length})`} key="resolved">
+              <TabPane
+                tab={`Resolved (${resolvedTickets.length})`}
+                key="resolved"
+              >
                 <Table
                   columns={ticketColumns}
                   dataSource={resolvedTickets}
@@ -498,24 +532,30 @@ const Support = ({ _user }) => {
           <Button key="close" onClick={() => setTicketModalVisible(false)}>
             Close
           </Button>,
-          selectedTicket?.status !== 'resolved' && selectedTicket?.status !== 'closed' && (
-            <Button 
-              key="reply" 
-              type="primary"
-              onClick={() => {
-                setTicketModalVisible(false);
-                openReplyModal(selectedTicket);
-              }}
-            >
-              Reply
-            </Button>
-          ),
+          selectedTicket?.status !== 'resolved' &&
+            selectedTicket?.status !== 'closed' && (
+              <Button
+                key="reply"
+                type="primary"
+                onClick={() => {
+                  setTicketModalVisible(false);
+                  openReplyModal(selectedTicket);
+                }}
+              >
+                Reply
+              </Button>
+            ),
         ]}
         width={800}
       >
         {selectedTicket && (
           <div>
-            <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
+            <Descriptions
+              column={2}
+              bordered
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
               <Descriptions.Item label="Subject" span={2}>
                 <Text strong>{selectedTicket.subject}</Text>
               </Descriptions.Item>
@@ -536,7 +576,11 @@ const Support = ({ _user }) => {
               </Descriptions.Item>
             </Descriptions>
 
-            <Card title="Issue Description" size="small" style={{ marginBottom: 16 }}>
+            <Card
+              title="Issue Description"
+              size="small"
+              style={{ marginBottom: 16 }}
+            >
               <Text>{selectedTicket.description}</Text>
             </Card>
 
@@ -549,18 +593,20 @@ const Support = ({ _user }) => {
                 <List.Item>
                   <List.Item.Meta
                     avatar={
-                      <div style={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: '50%',
-                        background: reply.isCustomer ? '#1890ff' : '#52c41a',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: '12px',
-                      }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: reply.isCustomer ? '#1890ff' : '#52c41a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '12px',
+                        }}
+                      >
                         {reply.isCustomer ? 'Y' : 'S'}
                       </div>
                     }
@@ -591,9 +637,9 @@ const Support = ({ _user }) => {
           <Button key="cancel" onClick={() => setReplyModalVisible(false)}>
             Cancel
           </Button>,
-          <Button 
-            key="submit" 
-            type="primary" 
+          <Button
+            key="submit"
+            type="primary"
             onClick={handleAddReply}
             disabled={!replyText.trim()}
           >
@@ -611,7 +657,7 @@ const Support = ({ _user }) => {
               showIcon
               style={{ marginBottom: 16 }}
             />
-            
+
             <TextArea
               rows={6}
               placeholder="Type your reply here..."
@@ -620,10 +666,11 @@ const Support = ({ _user }) => {
               showCount
               maxLength={1000}
             />
-            
+
             <div style={{ marginTop: 8 }}>
               <Text type="secondary">
-                Your reply will be sent to our support team and they will respond as soon as possible.
+                Your reply will be sent to our support team and they will
+                respond as soon as possible.
               </Text>
             </div>
           </div>
@@ -634,3 +681,4 @@ const Support = ({ _user }) => {
 };
 
 export default Support;
+

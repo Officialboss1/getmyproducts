@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   Row,
   Col,
@@ -13,7 +13,7 @@ import {
   Button,
   Typography,
   Divider,
-} from "antd";
+} from 'antd';
 import {
   TrophyOutlined,
   TeamOutlined,
@@ -21,9 +21,9 @@ import {
   ReloadOutlined,
   ArrowUpOutlined,
   UserOutlined,
-} from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
-import useDashboardData from "../../hooks/useDashboardData";
+} from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import useDashboardData from '../../hooks/useDashboardData';
 
 const { Title, Text } = Typography;
 
@@ -56,9 +56,9 @@ const SalespersonDashboard = ({ user }) => {
   };
 
   const getProgressColor = (percentage) => {
-    if (percentage >= 90) return "#52c41a";
-    if (percentage >= 70) return "#faad14";
-    return "#f5222d";
+    if (percentage >= 90) return '#52c41a';
+    if (percentage >= 70) return '#faad14';
+    return '#f5222d';
   };
 
   const getStatusTag = (percentage) => {
@@ -73,33 +73,39 @@ const SalespersonDashboard = ({ user }) => {
   const recentSales = (data.sales || []).slice(0, 5);
 
   return (
-    <div style={{ padding: "0 0px" }}>
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
-          <Title level={2} style={{ margin: 0, color: "#1890ff" }}>
+    <div style={{ padding: '0 0px' }}>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={12}>
+          <Title level={2} style={{ margin: 0, color: '#1890ff' }}>
             Sales Dashboard
           </Title>
           <Text type="secondary">
             Welcome back, {user?.firstName}! Here's your performance overview.
           </Text>
         </Col>
-        <Col>
-          <Space>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={refresh}
-              loading={loading}
-            >
-              Refresh
-            </Button>
-            <Button
-              type="primary"
-              icon={<ShoppingCartOutlined />}
-              onClick={() => navigate("/sales/add")}
-            >
-              Add New Sale
-            </Button>
-          </Space>
+        <Col xs={24} md={12}>
+          <Row justify="end" gutter={[8, 8]}>
+            <Col xs={12} sm={8}>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={refresh}
+                loading={loading}
+                block
+              >
+                Refresh
+              </Button>
+            </Col>
+            <Col xs={12} sm={16}>
+              <Button
+                type="primary"
+                icon={<ShoppingCartOutlined />}
+                onClick={() => navigate('/sales/add')}
+                block
+              >
+                Add New Sale
+              </Button>
+            </Col>
+          </Row>
         </Col>
       </Row>
 
@@ -123,7 +129,7 @@ const SalespersonDashboard = ({ user }) => {
                 title="Monthly Sales"
                 value={monthlyProgress.current}
                 suffix={`/ ${monthlyProgress.target}`}
-                valueStyle={{ color: "#1890ff" }}
+                valueStyle={{ color: '#1890ff' }}
               />
               <Progress
                 percent={Math.round(monthlyProgress.percentage)}
@@ -139,7 +145,7 @@ const SalespersonDashboard = ({ user }) => {
                 title="Total Revenue"
                 value={data.progress?.monthly?.totalRevenue || 0}
                 prefix="₦"
-                valueStyle={{ color: "#52c41a" }}
+                valueStyle={{ color: '#52c41a' }}
               />
             </Card>
           </Col>
@@ -149,11 +155,11 @@ const SalespersonDashboard = ({ user }) => {
                 title="Active Referrals"
                 value={
                   data.referralStats === null
-                    ? "N/A"
-                    : data.referralStats?.activeReferrals ??
+                    ? 'N/A'
+                    : (data.referralStats?.activeReferrals ??
                       data.referralStats?.progress?.referrals?.current ??
                       data.progress?.referrals ??
-                      0
+                      0)
                 }
                 suffix={`/ ${
                   data.referralStats?.progress?.referrals?.target ??
@@ -161,7 +167,7 @@ const SalespersonDashboard = ({ user }) => {
                   5
                 }`}
                 prefix={<TeamOutlined />}
-                valueStyle={{ color: "#722ed1" }}
+                valueStyle={{ color: '#722ed1' }}
               />
             </Card>
           </Col>
@@ -179,7 +185,7 @@ const SalespersonDashboard = ({ user }) => {
                 strokeColor={getProgressColor(dailyProgress.percentage)}
                 size="large"
               />
-              <div style={{ marginTop: 8, textAlign: "center" }}>
+              <div style={{ marginTop: 8, textAlign: 'center' }}>
                 <Text strong>{dailyProgress.current}</Text>
                 <Text type="secondary"> / {dailyProgress.target} units</Text>
               </div>
@@ -195,7 +201,7 @@ const SalespersonDashboard = ({ user }) => {
                 strokeColor={getProgressColor(weeklyProgress.percentage)}
                 size="large"
               />
-              <div style={{ marginTop: 8, textAlign: "center" }}>
+              <div style={{ marginTop: 8, textAlign: 'center' }}>
                 <Text strong>{weeklyProgress.current}</Text>
                 <Text type="secondary"> / {weeklyProgress.target} units</Text>
               </div>
@@ -211,7 +217,7 @@ const SalespersonDashboard = ({ user }) => {
                 strokeColor={getProgressColor(monthlyPercentage)}
                 size="large"
               />
-              <div style={{ marginTop: 8, textAlign: "center" }}>
+              <div style={{ marginTop: 8, textAlign: 'center' }}>
                 <Text strong>{monthlyProgress.current}</Text>
                 <Text type="secondary"> / {monthlyProgress.target} units</Text>
               </div>
@@ -231,7 +237,7 @@ const SalespersonDashboard = ({ user }) => {
                 </Space>
               }
               extra={
-                <Button type="link" onClick={() => navigate("/sales/history")}>
+                <Button type="link" onClick={() => navigate('/sales/history')}>
                   View All
                 </Button>
               }
@@ -240,25 +246,25 @@ const SalespersonDashboard = ({ user }) => {
                 dataSource={recentSales}
                 renderItem={(sale) => {
                   // Try to get product name from populated product_id
-                  let productName = "";
+                  let productName = '';
                   if (
                     sale.product_id &&
-                    typeof sale.product_id === "object" &&
+                    typeof sale.product_id === 'object' &&
                     sale.product_id.name
                   ) {
                     productName = sale.product_id.name;
                   } else if (sale.product_name) {
                     productName = sale.product_name;
-                  } else if (typeof sale.product_id === "string") {
+                  } else if (typeof sale.product_id === 'string') {
                     productName = sale.product_id;
                   } else {
-                    productName = "Unknown Product";
+                    productName = 'Unknown Product';
                   }
                   return (
                     <List.Item>
                       <List.Item.Meta
                         avatar={
-                          <ShoppingCartOutlined style={{ color: "#1890ff" }} />
+                          <ShoppingCartOutlined style={{ color: '#1890ff' }} />
                         }
                         title={`${sale.quantity_sold} units - ${productName}`}
                         description={new Date(
@@ -269,7 +275,7 @@ const SalespersonDashboard = ({ user }) => {
                     </List.Item>
                   );
                 }}
-                locale={{ emptyText: "No sales recorded yet" }}
+                locale={{ emptyText: 'No sales recorded yet' }}
               />
             </Card>
           </Col>
@@ -281,7 +287,7 @@ const SalespersonDashboard = ({ user }) => {
                 </Space>
               }
               extra={
-                <Button type="link" onClick={() => navigate("/competitions")}>
+                <Button type="link" onClick={() => navigate('/competitions')}>
                   View All
                 </Button>
               }
@@ -298,18 +304,18 @@ const SalespersonDashboard = ({ user }) => {
                             {competition.description}
                           </Text>
                           <Text type="secondary">
-                            Ends:{" "}
+                            Ends:{' '}
                             {new Date(competition.endDate).toLocaleDateString()}
                           </Text>
                         </Space>
                       }
                     />
-                    <Tag color={competition.isActive ? "green" : "default"}>
-                      {competition.isActive ? "Active" : "Ended"}
+                    <Tag color={competition.isActive ? 'green' : 'default'}>
+                      {competition.isActive ? 'Active' : 'Ended'}
                     </Tag>
                   </List.Item>
                 )}
-                locale={{ emptyText: "No active competitions" }}
+                locale={{ emptyText: 'No active competitions' }}
               />
             </Card>
           </Col>

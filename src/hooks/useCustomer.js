@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { customerAPI } from '../services/customerApi';
+import { customerAPI } from '../../api/services/customerApi';
 
 export const useCustomer = (customerId) => {
   const [customer, setCustomer] = useState(null);
@@ -8,7 +8,7 @@ export const useCustomer = (customerId) => {
 
   const fetchCustomer = async () => {
     if (!customerId) return;
-    
+
     setLoading(true);
     setError(null);
     try {
@@ -24,11 +24,16 @@ export const useCustomer = (customerId) => {
 
   const updateCustomer = async (updateData) => {
     try {
-      const response = await customerAPI.updateCustomerProfile(customerId, updateData);
+      const response = await customerAPI.updateCustomerProfile(
+        customerId,
+        updateData
+      );
       setCustomer(response.data);
       return response.data;
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Failed to update customer profile');
+      throw new Error(
+        err.response?.data?.message || 'Failed to update customer profile'
+      );
     }
   };
 
@@ -44,3 +49,6 @@ export const useCustomer = (customerId) => {
     refetch: fetchCustomer,
   };
 };
+
+
+

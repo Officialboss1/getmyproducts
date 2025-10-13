@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Card, Typography, message, Row, Col } from 'antd';
 import { LockOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { authAPI } from '../../src/api/services/api';
 
 const { Title, Text } = Typography;
 
@@ -39,20 +39,25 @@ const ResetPassword = () => {
 
   if (resetSuccess) {
     return (
-      <Row justify="center" align="middle" style={{ minHeight: '100vh', padding: 24 }}>
+      <Row
+        justify="center"
+        align="middle"
+        style={{ minHeight: '100vh', padding: 24 }}
+      >
         <Col xs={24} sm={20} md={16} lg={12} xl={8}>
           <Card style={{ textAlign: 'center' }}>
-            <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a', marginBottom: 24 }} />
+            <CheckCircleOutlined
+              style={{ fontSize: 48, color: '#52c41a', marginBottom: 24 }}
+            />
             <Title level={3}>Password Reset Successful</Title>
             <Text>
-              Your password has been reset successfully. You can now log in with your new password.
+              Your password has been reset successfully. You can now log in with
+              your new password.
             </Text>
             <br />
             <br />
             <Link to="/login">
-              <Button type="primary">
-                Go to Login
-              </Button>
+              <Button type="primary">Go to Login</Button>
             </Link>
           </Card>
         </Col>
@@ -61,27 +66,25 @@ const ResetPassword = () => {
   }
 
   return (
-    <Row justify="center" align="middle" style={{ minHeight: '100vh', padding: 24 }}>
+    <Row
+      justify="center"
+      align="middle"
+      style={{ minHeight: '100vh', padding: 24 }}
+    >
       <Col xs={24} sm={20} md={16} lg={12} xl={8}>
         <Card>
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
             <Title level={2}>Reset Password</Title>
-            <Text type="secondary">
-              Enter your new password below.
-            </Text>
+            <Text type="secondary">Enter your new password below.</Text>
           </div>
 
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSubmit}
-          >
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
             <Form.Item
               label="New Password"
               name="newPassword"
               rules={[
                 { required: true, message: 'Please enter your new password' },
-                { min: 6, message: 'Password must be at least 6 characters' }
+                { min: 6, message: 'Password must be at least 6 characters' },
               ]}
             >
               <Input.Password
@@ -129,9 +132,7 @@ const ResetPassword = () => {
 
           <div style={{ textAlign: 'center', marginTop: 16 }}>
             <Link to="/login">
-              <Button type="link">
-                Back to Login
-              </Button>
+              <Button type="link">Back to Login</Button>
             </Link>
           </div>
         </Card>
@@ -141,3 +142,6 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+
+
+

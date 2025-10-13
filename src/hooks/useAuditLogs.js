@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { superAdminAPI } from '../services/superAdminApi';
+import { superAdminAPI } from '../../src/api/services/superAdminApi';
 
 export const useAuditLogs = (initialFilters = {}) => {
   const [logs, setLogs] = useState([]);
@@ -31,7 +31,9 @@ export const useAuditLogs = (initialFilters = {}) => {
       const response = await superAdminAPI.exportAuditLogs(exportFilters);
       return response.data;
     } catch (err) {
-      throw new Error(err.response?.data?.message || 'Failed to export audit logs');
+      throw new Error(
+        err.response?.data?.message || 'Failed to export audit logs'
+      );
     }
   };
 
@@ -49,3 +51,6 @@ export const useAuditLogs = (initialFilters = {}) => {
     exportLogs,
   };
 };
+
+
+

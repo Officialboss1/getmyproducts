@@ -27,7 +27,7 @@ import {
   BarChartOutlined,
 } from '@ant-design/icons';
 import { useUsers } from '../../hooks/useUsers';
-import { adminAPI } from '../../services/adminApi';
+import { adminAPI } from '../../api/services/adminApi';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -44,7 +44,7 @@ const TargetsManagement = () => {
     users: salespersons,
     loading: usersLoading,
     refetch: _refetchUsers,
-  } = useUsers('sales_person');
+  } = useUsers('salesperson');
 
   useEffect(() => {
     fetchTargetsData();
@@ -56,9 +56,9 @@ const TargetsManagement = () => {
     setLoading(true);
     try {
       // Only process users who are salespersons
-      const salesTeam = (salespersons || []).filter(u => {
+      const salesTeam = (salespersons || []).filter((u) => {
         const role = (u.role || '').toLowerCase();
-        return role ===  role === 'salesperson';
+        return role === 'salesperson';
       });
 
       const targetsPromises = salesTeam.map(async (user) => {
@@ -66,7 +66,7 @@ const TargetsManagement = () => {
         try {
           const response = await adminAPI.getTargets(uid);
           const progressResponse = await adminAPI.getProgress(uid, 'monthly');
-          
+
           return {
             ...user,
             id: uid,
@@ -83,7 +83,7 @@ const TargetsManagement = () => {
         }
       });
 
-  const data = await Promise.all(targetsPromises);
+      const data = await Promise.all(targetsPromises);
       setTargetsData(data);
     } catch (_error) {
       console.error('Error fetching targets data:', _error);
@@ -159,13 +159,30 @@ const TargetsManagement = () => {
       key: 'name',
       render: (text, record) => (
         <Space>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            {record.firstName?.[0]}{record.lastName?.[0]}
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#1890ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
+            {record.firstName?.[0]}
+            {record.lastName?.[0]}
           </div>
           <div>
-            <Text strong>{record.firstName} {record.lastName}</Text>
+            <Text strong>
+              {record.firstName} {record.lastName}
+            </Text>
             <br />
-            <Text type="secondary" style={{ fontSize: '12px' }}>{record.email}</Text>
+            <Text type="secondary" style={{ fontSize: '12px' }}>
+              {record.email}
+            </Text>
           </div>
         </Space>
       ),
@@ -176,13 +193,17 @@ const TargetsManagement = () => {
       render: (_, record) => {
         const targets = record.targets;
         const isCustom = targets?.isCustom;
-        
+
         return (
           <Space direction="vertical" size="small">
             <div>
               <Text strong>Daily: </Text>
               <Text>{targets?.daily || 30}</Text>
-              {isCustom && <Tag color="blue" style={{ marginLeft: 4 }}>Custom</Tag>}
+              {isCustom && (
+                <Tag color="blue" style={{ marginLeft: 4 }}>
+                  Custom
+                </Tag>
+              )}
             </div>
             <div>
               <Text strong>Weekly: </Text>
@@ -202,16 +223,20 @@ const TargetsManagement = () => {
       render: (_, record) => {
         const progress = record.progress || {};
         const currentSales = Number(progress.totalUnits || 0);
-        const monthlyTarget = Number(progress.target || record.targets?.monthly || 900);
+        const monthlyTarget = Number(
+          progress.target || record.targets?.monthly || 900
+        );
         // Prefer backend-provided percentage when available
-        const percentage = typeof progress.percentage !== 'undefined' && progress.percentage !== null
-          ? Math.round(Number(progress.percentage))
-          : Math.round(getProgressPercentage(currentSales, monthlyTarget));
+        const percentage =
+          typeof progress.percentage !== 'undefined' &&
+          progress.percentage !== null
+            ? Math.round(Number(progress.percentage))
+            : Math.round(getProgressPercentage(currentSales, monthlyTarget));
 
         return (
           <Space direction="vertical" style={{ width: 150 }}>
-            <Progress 
-              percent={Math.min(100, percentage)} 
+            <Progress
+              percent={Math.min(100, percentage)}
               strokeColor={getProgressColor(percentage)}
               size="small"
             />
@@ -228,24 +253,36 @@ const TargetsManagement = () => {
       render: (_, record) => {
         const progress = record.progress || {};
         const currentSales = Number(progress.totalUnits || 0);
-        const monthlyTarget = Number(progress.target || record.targets?.monthly || 900);
+        const monthlyTarget = Number(
+          progress.target || record.targets?.monthly || 900
+        );
 
         // Prefer backend status if provided, else compute
         const backendStatus = progress.status;
-        const computedPercentage = Math.round(getProgressPercentage(currentSales, monthlyTarget));
-
-        const statusText = backendStatus || (
-          computedPercentage >= 100 ? 'Target Met' : computedPercentage >= 75 ? 'On Track' : computedPercentage >= 50 ? 'Needs Push' : 'Behind'
+        const computedPercentage = Math.round(
+          getProgressPercentage(currentSales, monthlyTarget)
         );
 
+        const statusText =
+          backendStatus ||
+          (computedPercentage >= 100
+            ? 'Target Met'
+            : computedPercentage >= 75
+              ? 'On Track'
+              : computedPercentage >= 50
+                ? 'Needs Push'
+                : 'Behind');
+
         // Map statusText to tag color
-        const statusColor = statusText?.toLowerCase().includes('target') || statusText?.toLowerCase().includes('met')
-          ? 'success'
-          : statusText?.toLowerCase().includes('on track')
-          ? 'processing'
-          : statusText?.toLowerCase().includes('needs')
-          ? 'warning'
-          : 'error';
+        const statusColor =
+          statusText?.toLowerCase().includes('target') ||
+          statusText?.toLowerCase().includes('met')
+            ? 'success'
+            : statusText?.toLowerCase().includes('on track')
+              ? 'processing'
+              : statusText?.toLowerCase().includes('needs')
+                ? 'warning'
+                : 'error';
 
         return <Tag color={statusColor}>{statusText}</Tag>;
       },
@@ -280,31 +317,33 @@ const TargetsManagement = () => {
     },
   ];
 
-  const filteredData = targetsData.filter(item =>
-    item.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    item.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-    item.email?.toLowerCase().includes(searchText.toLowerCase())
+  const filteredData = targetsData.filter(
+    (item) =>
+      item.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.email?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const stats = {
     totalUsers: targetsData.length,
-    customTargets: targetsData.filter(item => item.targets?.isCustom).length,
-    onTrack: targetsData.filter(item => {
+    customTargets: targetsData.filter((item) => item.targets?.isCustom).length,
+    onTrack: targetsData.filter((item) => {
       const progress = item.progress;
       const monthlyTarget = item.targets?.monthly || 900;
       const currentSales = progress?.totalUnits || 0;
       const percentage = getProgressPercentage(currentSales, monthlyTarget);
       return percentage >= 75;
     }).length,
-    averageProgress: Math.round(
-      targetsData.reduce((acc, item) => {
-        const progress = item.progress;
-        const monthlyTarget = item.targets?.monthly || 900;
-        const currentSales = progress?.totalUnits || 0;
-        const percentage = getProgressPercentage(currentSales, monthlyTarget);
-        return acc + percentage;
-      }, 0) / targetsData.length
-    ) || 0,
+    averageProgress:
+      Math.round(
+        targetsData.reduce((acc, item) => {
+          const progress = item.progress;
+          const monthlyTarget = item.targets?.monthly || 900;
+          const currentSales = progress?.totalUnits || 0;
+          const percentage = getProgressPercentage(currentSales, monthlyTarget);
+          return acc + percentage;
+        }, 0) / targetsData.length
+      ) || 0,
   };
 
   return (
@@ -381,7 +420,7 @@ const TargetsManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} team members`,
           }}
         />
@@ -399,17 +438,15 @@ const TargetsManagement = () => {
         footer={null}
         width={500}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSetTargets}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSetTargets}>
           <Row gutter={16}>
             <Col span={8}>
               <Form.Item
                 label="Daily Target"
                 name="daily"
-                rules={[{ required: true, message: 'Please enter daily target' }]}
+                rules={[
+                  { required: true, message: 'Please enter daily target' },
+                ]}
               >
                 <InputNumber
                   min={1}
@@ -423,7 +460,9 @@ const TargetsManagement = () => {
               <Form.Item
                 label="Weekly Target"
                 name="weekly"
-                rules={[{ required: true, message: 'Please enter weekly target' }]}
+                rules={[
+                  { required: true, message: 'Please enter weekly target' },
+                ]}
               >
                 <InputNumber
                   min={1}
@@ -437,7 +476,9 @@ const TargetsManagement = () => {
               <Form.Item
                 label="Monthly Target"
                 name="monthly"
-                rules={[{ required: true, message: 'Please enter monthly target' }]}
+                rules={[
+                  { required: true, message: 'Please enter monthly target' },
+                ]}
               >
                 <InputNumber
                   min={1}
@@ -449,9 +490,17 @@ const TargetsManagement = () => {
             </Col>
           </Row>
 
-          <div style={{ background: '#f5f5f5', padding: '12px', borderRadius: '6px', marginBottom: '16px' }}>
+          <div
+            style={{
+              background: '#f5f5f5',
+              padding: '12px',
+              borderRadius: '6px',
+              marginBottom: '16px',
+            }}
+          >
             <Text type="secondary">
-              <strong>Default Targets:</strong> Daily: 30, Weekly: 210, Monthly: 900 units
+              <strong>Default Targets:</strong> Daily: 30, Weekly: 210, Monthly:
+              900 units
             </Text>
           </div>
 
@@ -460,7 +509,7 @@ const TargetsManagement = () => {
               <Button type="primary" htmlType="submit">
                 Save Targets
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   setModalVisible(false);
                   setSelectedUser(null);
@@ -478,3 +527,5 @@ const TargetsManagement = () => {
 };
 
 export default TargetsManagement;
+
+
