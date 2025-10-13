@@ -34,6 +34,10 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/
+
+          server-dir: /home/okwe/getmyproducts.com/
+          protocol: ftp
           port: 22
           local_path: ./dist/
           remote_path: /home/okwe/getmyproducts.com/

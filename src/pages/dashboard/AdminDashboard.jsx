@@ -29,9 +29,11 @@ import {
   BarChartOutlined,
   ArrowUpOutlined,
   ArrowDownOutlined,
+  ShoppingOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { adminAPI } from '../../services/adminApi';
+import { adminAPI } from '../../api/services/adminApi';
 
 const { Title, Text } = Typography;
 
@@ -53,7 +55,10 @@ const AdminDashboard = () => {
   const [topPerformers, setTopPerformers] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
   const [systemHealth, setSystemHealth] = useState({ api: 0, db: 0, cache: 0 });
-  const [activitySettings, setActivitySettings] = useState({ salespersonActiveDays: 30, customerActiveDays: 30 });
+  const [activitySettings, setActivitySettings] = useState({
+    salespersonActiveDays: 30,
+    customerActiveDays: 30,
+  });
   const [activityModalVisible, setActivityModalVisible] = useState(false);
   const [activityForm] = Form.useForm();
   const [savingActivity, setSavingActivity] = useState(false);
@@ -69,7 +74,6 @@ const AdminDashboard = () => {
         activitiesResponse,
         healthResponse,
       ] = await Promise.all([
-
         // 🧩 1. System Analytics
         adminAPI.getSystemAnalytics(),
         // 🧩 2. Top Performers
@@ -93,11 +97,17 @@ const AdminDashboard = () => {
       };
 
       // Fallback: if backend didn't provide targetAchievement, compute an estimate
-      if (!sanitizedSystem.targetAchievement && sanitizedSystem.activeSalespersons > 0) {
+      if (
+        !sanitizedSystem.targetAchievement &&
+        sanitizedSystem.activeSalespersons > 0
+      ) {
         const totalTargets = sanitizedSystem.activeSalespersons * 900; // default monthly target
-        sanitizedSystem.targetAchievement = totalTargets > 0
-          ? Number(((sanitizedSystem.totalSales / totalTargets) * 100).toFixed(1))
-          : 0;
+        sanitizedSystem.targetAchievement =
+          totalTargets > 0
+            ? Number(
+                ((sanitizedSystem.totalSales / totalTargets) * 100).toFixed(1)
+              )
+            : 0;
       }
 
       setSystemData(sanitizedSystem);
@@ -108,12 +118,19 @@ const AdminDashboard = () => {
         .slice(0, 5)
         .map((item, idx) => {
           const totalUnits = item.totalUnits ?? item.totalUnits ?? 0;
-          const userId = item.userId || item._id || (item.user && item.user._id) || null;
+          const userId =
+            item.userId || item._id || (item.user && item.user._id) || null;
           const name =
-            item.name || (item.user ? `${item.user.firstName} ${item.user.lastName}` : "Unknown");
+            item.name ||
+            (item.user
+              ? `${item.user.firstName} ${item.user.lastName}`
+              : 'Unknown');
           // Prefer backend-provided target/percentage when available, otherwise fall back
           const target = item.target ?? 900; // default monthly target
-          const percentage = target > 0 ? Math.min(100, Math.round((totalUnits / target) * 100)) : 0;
+          const percentage =
+            target > 0
+              ? Math.min(100, Math.round((totalUnits / target) * 100))
+              : 0;
 
           return {
             rank: idx + 1,
@@ -140,17 +157,32 @@ const AdminDashboard = () => {
         .slice(0, 10)
         .map((a) => {
           // editor_user_id is populated in backend; fallback to actor or user
-          const editor = a.editor_user_id || a.actor || (a.user && (a.user.firstName || a.user.lastName) ? a.user : null) || null;
+          const editor =
+            a.editor_user_id ||
+            a.actor ||
+            (a.user && (a.user.firstName || a.user.lastName) ? a.user : null) ||
+            null;
           const user = editor
-            ? `${editor.firstName || ''} ${editor.lastName || ''}`.trim() || editor.email || 'Unknown'
+            ? `${editor.firstName || ''} ${editor.lastName || ''}`.trim() ||
+              editor.email ||
+              'Unknown'
             : a.user || a.userName || 'Unknown';
 
-          const action = a.action_type || a.action || a.message || a.actionType || 'Updated';
+          const action =
+            a.action_type || a.action || a.message || a.actionType || 'Updated';
 
-          const timeRaw = a.createdAt || a.timestamp || a.date || a.time || a.timestamp || null;
+          const timeRaw =
+            a.createdAt ||
+            a.timestamp ||
+            a.date ||
+            a.time ||
+            a.timestamp ||
+            null;
           const time = timeRaw ? new Date(timeRaw).toLocaleString() : '';
 
-          const saleInfo = a.sale_id ? ` (${a.sale_id.receiver_email || ''})` : '';
+          const saleInfo = a.sale_id
+            ? ` (${a.sale_id.receiver_email || ''})`
+            : '';
 
           return {
             id: a._id || a.id || Math.random().toString(36).slice(2, 9),
@@ -249,10 +281,10 @@ const AdminDashboard = () => {
             rank === 1
               ? 'gold'
               : rank === 2
-              ? 'silver'
-              : rank === 3
-              ? 'volcano'
-              : 'default'
+                ? 'silver'
+                : rank === 3
+                  ? 'volcano'
+                  : 'default'
           }
         >
           #{rank}
@@ -271,7 +303,11 @@ const AdminDashboard = () => {
       title: 'Progress',
       key: 'progress',
       render: (_, record) => (
-        <Progress percent={record.percentage ?? 0} size="small" style={{ width: 120 }} />
+        <Progress
+          percent={record.percentage ?? 0}
+          size="small"
+          style={{ width: 120 }}
+        />
       ),
     },
   ];
@@ -279,8 +315,8 @@ const AdminDashboard = () => {
   return (
     <div style={{ padding: 24 }}>
       {/* === HEADER === */}
-      <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} md={12}>
           <Title level={2} style={{ margin: 0 }}>
             <BarChartOutlined /> Admin Dashboard
           </Title>
@@ -288,19 +324,28 @@ const AdminDashboard = () => {
             Overview of your sales team performance and system analytics
           </Text>
         </Col>
-        <Col>
-          <Space>
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={fetchDashboardData}
-              loading={loading}
-            >
-              Refresh
-            </Button>
-            <Button type="primary" onClick={() => navigate('/analytics')}>
-              Detailed Analytics
-            </Button>
-          </Space>
+        <Col xs={24} md={12}>
+          <Row justify="end" gutter={[8, 8]}>
+            <Col xs={12} sm={10}>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={fetchDashboardData}
+                loading={loading}
+                block
+              >
+                Refresh
+              </Button>
+            </Col>
+            <Col xs={12} sm={14}>
+              <Button
+                type="primary"
+                onClick={() => navigate('/analytics')}
+                block
+              >
+                Detailed Analytics
+              </Button>
+            </Col>
+          </Row>
         </Col>
       </Row>
 
@@ -323,7 +368,13 @@ const AdminDashboard = () => {
             {/* === KPI CARDS === */}
             <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
               {kpiCards.map((card, index) => (
-                <Col xs={24} sm={12} lg={8} xl={4} key={`kpi-${card.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                <Col
+                  xs={24}
+                  sm={12}
+                  lg={8}
+                  xl={4}
+                  key={`kpi-${card.title.toLowerCase().replace(/\s+/g, '-')}`}
+                >
                   <Card>
                     <Statistic
                       title={card.title}
@@ -336,9 +387,7 @@ const AdminDashboard = () => {
                       <div style={{ marginTop: 8 }}>
                         <Text
                           type={
-                            systemData.monthlyGrowth >= 0
-                              ? 'success'
-                              : 'danger'
+                            systemData.monthlyGrowth >= 0 ? 'success' : 'danger'
                           }
                         >
                           {systemData.monthlyGrowth >= 0 ? (
@@ -365,16 +414,24 @@ const AdminDashboard = () => {
                     </Space>
                   }
                   extra={
-                    <Button type="link" onClick={() => { activityForm.setFieldsValue(activitySettings); setActivityModalVisible(true); }}>
+                    <Button
+                      type="link"
+                      onClick={() => {
+                        activityForm.setFieldsValue(activitySettings);
+                        setActivityModalVisible(true);
+                      }}
+                    >
                       Edit
                     </Button>
                   }
                 >
                   <div>
-                    <Text strong>Salesperson active window:</Text> {activitySettings.salespersonActiveDays} days
+                    <Text strong>Salesperson active window:</Text>{' '}
+                    {activitySettings.salespersonActiveDays} days
                   </div>
                   <div style={{ marginTop: 8 }}>
-                    <Text strong>Customer active window:</Text> {activitySettings.customerActiveDays} days
+                    <Text strong>Customer active window:</Text>{' '}
+                    {activitySettings.customerActiveDays} days
                   </div>
                 </Card>
               </Col>
@@ -400,6 +457,7 @@ const AdminDashboard = () => {
                     pagination={false}
                     size="small"
                     rowKey={(r) => r.userId || r.id || r._id || r.name}
+                    scroll={{ x: 400 }}
                     locale={{ emptyText: 'No performance data available' }}
                   />
                 </Card>
@@ -461,7 +519,11 @@ const AdminDashboard = () => {
                   const data = resp?.data || {};
                   const payload = data.activity || data;
                   // If backend returned wrapper { message, activity }, unwrap it
-                  if (payload && (payload.salespersonActiveDays || payload.customerActiveDays)) {
+                  if (
+                    payload &&
+                    (payload.salespersonActiveDays ||
+                      payload.customerActiveDays)
+                  ) {
                     setActivitySettings(payload);
                   } else {
                     // fallback to sent values
@@ -475,22 +537,41 @@ const AdminDashboard = () => {
                     const refreshed = await adminAPI.getActivitySettings();
                     if (refreshed?.data) setActivitySettings(refreshed.data);
                   } catch (e) {
-                    console.debug('Could not refresh activity settings after save', e?.message || e);
+                    console.debug(
+                      'Could not refresh activity settings after save',
+                      e?.message || e
+                    );
                   }
                   fetchDashboardData();
                 } catch (err) {
                   hide();
                   setSavingActivity(false);
                   console.error('Failed to save activity settings', err);
-                  message.error(err?.response?.data?.message || err?.message || 'Failed to save activity settings');
+                  message.error(
+                    err?.response?.data?.message ||
+                      err?.message ||
+                      'Failed to save activity settings'
+                  );
                 }
               }}
             >
-              <Form form={activityForm} layout="vertical" initialValues={activitySettings}>
-                <Form.Item name="salespersonActiveDays" label="Salesperson active (days)" rules={[{ required: true, type: 'number', min: 1 }] }>
+              <Form
+                form={activityForm}
+                layout="vertical"
+                initialValues={activitySettings}
+              >
+                <Form.Item
+                  name="salespersonActiveDays"
+                  label="Salesperson active (days)"
+                  rules={[{ required: true, type: 'number', min: 1 }]}
+                >
                   <InputNumber min={1} />
                 </Form.Item>
-                <Form.Item name="customerActiveDays" label="Customer active (days)" rules={[{ required: true, type: 'number', min: 1 }] }>
+                <Form.Item
+                  name="customerActiveDays"
+                  label="Customer active (days)"
+                  rules={[{ required: true, type: 'number', min: 1 }]}
+                >
                   <InputNumber min={1} />
                 </Form.Item>
               </Form>
@@ -499,56 +580,91 @@ const AdminDashboard = () => {
             {/* === QUICK ACTIONS === */}
             <Card title="Quick Actions" style={{ marginTop: 24 }}>
               <Row gutter={[16, 16]}>
-                <Col xs={24} sm={8}>
+                <Col xs={24} sm={6}>
                   <Card
                     hoverable
                     onClick={() => navigate('/salespersons')}
-                    style={{ textAlign: 'center' }}
+                    style={{ textAlign: 'center', minHeight: 120 }}
+                    bodyStyle={{ padding: '16px' }}
                   >
                     <TeamOutlined
                       style={{
-                        fontSize: 32,
+                        fontSize: 28,
                         color: '#1890ff',
-                        marginBottom: 8,
+                        marginBottom: 12,
                       }}
                     />
-                    <Title level={5}>Manage Sales Team</Title>
-                    <Text type="secondary">View and manage salespersons</Text>
+                    <Title level={5} style={{ marginBottom: 4 }}>
+                      Manage Sales Team
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                      View and manage salespersons
+                    </Text>
                   </Card>
                 </Col>
-                <Col xs={24} sm={8}>
+                <Col xs={24} sm={6}>
+                  <Card
+                    hoverable
+                    onClick={() => navigate('/products')}
+                    style={{ textAlign: 'center', minHeight: 120 }}
+                    bodyStyle={{ padding: '16px' }}
+                  >
+                    <ShoppingOutlined
+                      style={{
+                        fontSize: 28,
+                        color: '#722ed1',
+                        marginBottom: 12,
+                      }}
+                    />
+                    <Title level={5} style={{ marginBottom: 4 }}>
+                      Manage Products
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                      Create and manage products
+                    </Text>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={6}>
+                  <Card
+                    hoverable
+                    onClick={() => navigate('/orders')}
+                    style={{ textAlign: 'center', minHeight: 120 }}
+                    bodyStyle={{ padding: '16px' }}
+                  >
+                    <FileTextOutlined
+                      style={{
+                        fontSize: 28,
+                        color: '#fa541c',
+                        marginBottom: 12,
+                      }}
+                    />
+                    <Title level={5} style={{ marginBottom: 4 }}>
+                      Manage Orders
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                      View and manage customer orders
+                    </Text>
+                  </Card>
+                </Col>
+                <Col xs={24} sm={6}>
                   <Card
                     hoverable
                     onClick={() => navigate('/targets')}
-                    style={{ textAlign: 'center' }}
+                    style={{ textAlign: 'center', minHeight: 120 }}
+                    bodyStyle={{ padding: '16px' }}
                   >
                     <BarChartOutlined
                       style={{
-                        fontSize: 32,
+                        fontSize: 28,
                         color: '#52c41a',
-                        marginBottom: 8,
+                        marginBottom: 12,
                       }}
                     />
-                    <Title level={5}>Set Targets</Title>
-                    <Text type="secondary">Configure sales targets</Text>
-                  </Card>
-                </Col>
-                <Col xs={24} sm={8}>
-                  <Card
-                    hoverable
-                    onClick={() => navigate('/competitions')}
-                    style={{ textAlign: 'center' }}
-                  >
-                    <TrophyOutlined
-                      style={{
-                        fontSize: 32,
-                        color: '#faad14',
-                        marginBottom: 8,
-                      }}
-                    />
-                    <Title level={5}>Create Competition</Title>
-                    <Text type="secondary">
-                      Launch new sales competition
+                    <Title level={5} style={{ marginBottom: 4 }}>
+                      Set Targets
+                    </Title>
+                    <Text type="secondary" style={{ fontSize: '13px' }}>
+                      Configure sales targets
                     </Text>
                   </Card>
                 </Col>
@@ -557,36 +673,63 @@ const AdminDashboard = () => {
 
             {/* === SYSTEM HEALTH === */}
             <Card title="System Health" style={{ marginTop: 24 }}>
-              <Row gutter={16}>
-                <Col span={8} style={{ textAlign: 'center' }}>
-                  <Progress
-                    type="circle"
-                    percent={systemHealth.api}
-                    format={(p) => `API ${p}%`}
-                  />
-                  <div style={{ marginTop: 8 }}>
-                    <Text strong>API Status</Text>
+              <Row gutter={[16, 24]}>
+                <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Progress
+                      type="circle"
+                      percent={systemHealth.api}
+                      format={(p) => `API ${p}%`}
+                      size={80}
+                    />
                   </div>
+                  <Text strong style={{ fontSize: '14px' }}>
+                    API Status
+                  </Text>
                 </Col>
-                <Col span={8} style={{ textAlign: 'center' }}>
-                  <Progress
-                    type="circle"
-                    percent={systemHealth.db}
-                    format={(p) => `DB ${p}%`}
-                  />
-                  <div style={{ marginTop: 8 }}>
-                    <Text strong>Database</Text>
+                <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Progress
+                      type="circle"
+                      percent={systemHealth.db}
+                      format={(p) => `DB ${p}%`}
+                      size={80}
+                    />
                   </div>
+                  <Text strong style={{ fontSize: '14px' }}>
+                    Database
+                  </Text>
                 </Col>
-                <Col span={8} style={{ textAlign: 'center' }}>
-                  <Progress
-                    type="circle"
-                    percent={systemHealth.cache}
-                    format={(p) => `Cache ${p}%`}
-                  />
-                  <div style={{ marginTop: 8 }}>
-                    <Text strong>Cache</Text>
+                <Col xs={24} sm={8} style={{ textAlign: 'center' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <Progress
+                      type="circle"
+                      percent={systemHealth.cache}
+                      format={(p) => `Cache ${p}%`}
+                      size={80}
+                    />
                   </div>
+                  <Text strong style={{ fontSize: '14px' }}>
+                    Cache
+                  </Text>
                 </Col>
               </Row>
             </Card>
@@ -598,3 +741,6 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+
+
+

@@ -16,7 +16,7 @@ import {
   Descriptions,
   Modal,
 } from 'antd';
-import { superAdminAPI } from '../../services/superAdminApi';
+import { superAdminAPI } from '../../api/services/superAdminApi';
 import {
   SearchOutlined,
   UserOutlined,
@@ -50,9 +50,11 @@ const CustomersManagement = () => {
       const res = await superAdminAPI.getAllCustomers();
       const payload = res?.data || res || [];
       const allUsers = Array.isArray(payload) ? payload : payload.items || [];
-      
+
       // Filter only users with role 'customer'
-      const customerUsers = allUsers.filter(user => (user.role || '').toLowerCase() === 'customer');
+      const customerUsers = allUsers.filter(
+        (user) => (user.role || '').toLowerCase() === 'customer'
+      );
       setCustomers(customerUsers);
     } catch (err) {
       console.error('Error fetching customers', err);
@@ -65,21 +67,30 @@ const CustomersManagement = () => {
   // Statistics
   const stats = {
     total: customers.length,
-    active: customers.filter(c => c.status === 'active').length,
+    active: customers.filter((c) => c.status === 'active').length,
     totalRevenue: customers.reduce((acc, c) => acc + (c.totalSpent || 0), 0),
     averageOrderValue: (() => {
-      const totalOrders = customers.reduce((acc, c) => acc + (c.totalOrders || 0), 0);
-      return totalOrders ? Math.round(customers.reduce((acc, c) => acc + (c.totalSpent || 0), 0) / totalOrders) : 0;
+      const totalOrders = customers.reduce(
+        (acc, c) => acc + (c.totalOrders || 0),
+        0
+      );
+      return totalOrders
+        ? Math.round(
+            customers.reduce((acc, c) => acc + (c.totalSpent || 0), 0) /
+              totalOrders
+          )
+        : 0;
     })(),
   };
 
   // Filtered customers
-  const filteredCustomers = customers.filter(c =>
-    (c.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-     c.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-     c.email?.toLowerCase().includes(searchText.toLowerCase()) ||
-     c.company?.toLowerCase().includes(searchText.toLowerCase())) &&
-    (statusFilter === 'all' || c.status === statusFilter)
+  const filteredCustomers = customers.filter(
+    (c) =>
+      (c.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        c.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        c.email?.toLowerCase().includes(searchText.toLowerCase()) ||
+        c.company?.toLowerCase().includes(searchText.toLowerCase())) &&
+      (statusFilter === 'all' || c.status === statusFilter)
   );
 
   const showCustomerDetails = (customer) => {
@@ -108,11 +119,26 @@ const CustomersManagement = () => {
       key: 'name',
       render: (_, record) => (
         <Space>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#13c2c2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            {record.firstName?.[0]}{record.lastName?.[0]}
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#13c2c2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
+            {record.firstName?.[0]}
+            {record.lastName?.[0]}
           </div>
           <div>
-            <Text strong>{record.firstName} {record.lastName}</Text>
+            <Text strong>
+              {record.firstName} {record.lastName}
+            </Text>
             <br />
             <Text type="secondary" style={{ fontSize: '12px' }}>
               <MailOutlined /> {record.email}
@@ -127,7 +153,9 @@ const CustomersManagement = () => {
       render: (_, record) => (
         <Space direction="vertical" size={0}>
           <Text strong>{record.company || 'N/A'}</Text>
-          <Text type="secondary" style={{ fontSize: '12px' }}>{record.position || 'N/A'}</Text>
+          <Text type="secondary" style={{ fontSize: '12px' }}>
+            {record.position || 'N/A'}
+          </Text>
         </Space>
       ),
     },
@@ -147,7 +175,10 @@ const CustomersManagement = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge status={status === 'active' ? 'success' : 'default'} text={status?.toUpperCase() || 'N/A'} />
+        <Badge
+          status={status === 'active' ? 'success' : 'default'}
+          text={status?.toUpperCase() || 'N/A'}
+        />
       ),
     },
     {
@@ -167,7 +198,9 @@ const CustomersManagement = () => {
       dataIndex: 'lastOrder',
       key: 'lastOrder',
       render: (date) => (
-        <Text type="secondary">{date ? new Date(date).toLocaleDateString() : 'Never'}</Text>
+        <Text type="secondary">
+          {date ? new Date(date).toLocaleDateString() : 'Never'}
+        </Text>
       ),
     },
     {
@@ -176,10 +209,18 @@ const CustomersManagement = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
-            <Button type="link" icon={<EyeOutlined />} onClick={() => showCustomerDetails(record)} />
+            <Button
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => showCustomerDetails(record)}
+            />
           </Tooltip>
           <Tooltip title="Contact Customer">
-            <Button type="link" icon={<MailOutlined />} onClick={() => handleSendMessage(record)} />
+            <Button
+              type="link"
+              icon={<MailOutlined />}
+              onClick={() => handleSendMessage(record)}
+            />
           </Tooltip>
         </Space>
       ),
@@ -193,31 +234,56 @@ const CustomersManagement = () => {
           <Title level={2} style={{ margin: 0 }}>
             <UserOutlined /> Customers Management
           </Title>
-          <Text type="secondary">Manage all customer accounts and relationships</Text>
+          <Text type="secondary">
+            Manage all customer accounts and relationships
+          </Text>
         </Col>
       </Row>
 
       {/* Statistics */}
-      {error && <Card style={{ marginBottom: 16 }}><Text type="danger">{error}</Text></Card>}
+      {error && (
+        <Card style={{ marginBottom: 16 }}>
+          <Text type="danger">{error}</Text>
+        </Card>
+      )}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic title="Total Customers" value={stats.total} prefix={<UserOutlined />} valueStyle={{ color: '#1890ff' }} />
+            <Statistic
+              title="Total Customers"
+              value={stats.total}
+              prefix={<UserOutlined />}
+              valueStyle={{ color: '#1890ff' }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic title="Active Customers" value={stats.active} valueStyle={{ color: '#52c41a' }} />
+            <Statistic
+              title="Active Customers"
+              value={stats.active}
+              valueStyle={{ color: '#52c41a' }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic title="Total Revenue" value={stats.totalRevenue} prefix="$" valueStyle={{ color: '#faad14' }} />
+            <Statistic
+              title="Total Revenue"
+              value={stats.totalRevenue}
+              prefix="$"
+              valueStyle={{ color: '#faad14' }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={6}>
           <Card>
-            <Statistic title="Avg Order Value" value={stats.averageOrderValue} prefix="$" valueStyle={{ color: '#722ed1' }} />
+            <Statistic
+              title="Avg Order Value"
+              value={stats.averageOrderValue}
+              prefix="$"
+              valueStyle={{ color: '#722ed1' }}
+            />
           </Card>
         </Col>
       </Row>
@@ -240,13 +306,25 @@ const CustomersManagement = () => {
               value={statusFilter}
               onChange={setStatusFilter}
             >
-              <Option value="all" key="all-status">All Status</Option>
-              <Option value="active" key="active-status">Active</Option>
-              <Option value="inactive" key="inactive-status">Inactive</Option>
+              <Option value="all" key="all-status">
+                All Status
+              </Option>
+              <Option value="active" key="active-status">
+                Active
+              </Option>
+              <Option value="inactive" key="inactive-status">
+                Inactive
+              </Option>
             </Select>
           </Col>
           <Col xs={24} md={6}>
-            <Button type="primary" icon={<SearchOutlined />} style={{ width: '100%' }}>Search</Button>
+            <Button
+              type="primary"
+              icon={<SearchOutlined />}
+              style={{ width: '100%' }}
+            >
+              Search
+            </Button>
           </Col>
         </Row>
       </Card>
@@ -260,7 +338,8 @@ const CustomersManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} customers`,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} customers`,
           }}
           loading={loading}
         />
@@ -272,7 +351,9 @@ const CustomersManagement = () => {
         open={detailModalVisible}
         onCancel={() => setDetailModalVisible(false)}
         footer={[
-          <Button key="close" onClick={() => setDetailModalVisible(false)}>Close</Button>,
+          <Button key="close" onClick={() => setDetailModalVisible(false)}>
+            Close
+          </Button>,
         ]}
         width={700}
       >
@@ -281,27 +362,49 @@ const CustomersManagement = () => {
             <Descriptions.Item label="Full Name" span={2}>
               {selectedCustomer.firstName} {selectedCustomer.lastName}
             </Descriptions.Item>
-            <Descriptions.Item label="Email">{selectedCustomer.email}</Descriptions.Item>
-            <Descriptions.Item label="Phone">{selectedCustomer.phone || 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Company">{selectedCustomer.company || 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Position">{selectedCustomer.position || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Email">
+              {selectedCustomer.email}
+            </Descriptions.Item>
+            <Descriptions.Item label="Phone">
+              {selectedCustomer.phone || 'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Company">
+              {selectedCustomer.company || 'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Position">
+              {selectedCustomer.position || 'N/A'}
+            </Descriptions.Item>
             <Descriptions.Item label="Status">
-              <Tag color={selectedCustomer.status === 'active' ? 'green' : 'red'}>
+              <Tag
+                color={selectedCustomer.status === 'active' ? 'green' : 'red'}
+              >
                 {selectedCustomer.status?.toUpperCase() || 'N/A'}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Total Orders">{selectedCustomer.totalOrders || 0}</Descriptions.Item>
+            <Descriptions.Item label="Total Orders">
+              {selectedCustomer.totalOrders || 0}
+            </Descriptions.Item>
             <Descriptions.Item label="Total Spent">
-              <Text strong>${selectedCustomer.totalSpent?.toLocaleString() || 0}</Text>
+              <Text strong>
+                ${selectedCustomer.totalSpent?.toLocaleString() || 0}
+              </Text>
             </Descriptions.Item>
             <Descriptions.Item label="Last Order">
-              {selectedCustomer.lastOrder ? new Date(selectedCustomer.lastOrder).toLocaleDateString() : 'Never'}
+              {selectedCustomer.lastOrder
+                ? new Date(selectedCustomer.lastOrder).toLocaleDateString()
+                : 'Never'}
             </Descriptions.Item>
             <Descriptions.Item label="Member Since">
-              {selectedCustomer.joinDate ? new Date(selectedCustomer.joinDate).toLocaleDateString() : 'N/A'}
+              {selectedCustomer.joinDate
+                ? new Date(selectedCustomer.joinDate).toLocaleDateString()
+                : 'N/A'}
             </Descriptions.Item>
-            <Descriptions.Item label="Address" span={2}>{selectedCustomer.address || 'N/A'}</Descriptions.Item>
-            <Descriptions.Item label="Notes" span={2}>{selectedCustomer.notes || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Address" span={2}>
+              {selectedCustomer.address || 'N/A'}
+            </Descriptions.Item>
+            <Descriptions.Item label="Notes" span={2}>
+              {selectedCustomer.notes || 'N/A'}
+            </Descriptions.Item>
           </Descriptions>
         )}
       </Modal>
@@ -315,25 +418,27 @@ const CustomersManagement = () => {
           <Button key="cancel" onClick={() => setMessageModalVisible(false)}>
             Cancel
           </Button>,
-          <Button key="send" type="primary" onClick={() => {
-            // Create a simple form submission
-            const subject = document.querySelector('input[placeholder="Message subject"]').value;
-            const messageText = document.querySelector('textarea[placeholder="Type your message here..."]').value;
-            handleSendMessageSubmit({ subject, message: messageText });
-          }}>
+          <Button
+            key="send"
+            type="primary"
+            onClick={() => {
+              // Create a simple form submission
+              const subject = document.querySelector(
+                'input[placeholder="Message subject"]'
+              ).value;
+              const messageText = document.querySelector(
+                'textarea[placeholder="Type your message here..."]'
+              ).value;
+              handleSendMessageSubmit({ subject, message: messageText });
+            }}
+          >
             <SendOutlined /> Send Message
           </Button>,
         ]}
       >
         <div style={{ marginBottom: 16 }}>
-          <Input
-            placeholder="Message subject"
-            style={{ marginBottom: 16 }}
-          />
-          <Input.TextArea
-            rows={6}
-            placeholder="Type your message here..."
-          />
+          <Input placeholder="Message subject" style={{ marginBottom: 16 }} />
+          <Input.TextArea rows={6} placeholder="Type your message here..." />
           <Text type="secondary" style={{ marginTop: 8, display: 'block' }}>
             This message will be sent via email to {selectedCustomer?.email}
           </Text>
@@ -344,3 +449,5 @@ const CustomersManagement = () => {
 };
 
 export default CustomersManagement;
+
+

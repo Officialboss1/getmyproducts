@@ -41,21 +41,17 @@ const AuditLogs = () => {
   const [selectedLog, setSelectedLog] = useState(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-  const {
-    logs,
-    loading,
-    error,
-    filters,
-    updateFilters,
-    exportLogs,
-  } = useAuditLogs();
+  const { logs, loading, error, filters, updateFilters, exportLogs } =
+    useAuditLogs();
 
   // Use live logs from hook instead of mock data
   // Map backend audit log shape to table-friendly shape
-  const mappedLogs = (logs || []).map((l) => {
+  const mappedLogs = Array.isArray(logs) ? logs.map((l) => {
     const editor = l.editor_user_id || l.actor || l.user || null;
     const userName = editor
-      ? `${editor.firstName || ''} ${editor.lastName || ''}`.trim() || editor.email || 'Unknown'
+      ? `${editor.firstName || ''} ${editor.lastName || ''}`.trim() ||
+        editor.email ||
+        'Unknown'
       : l.userName || l.user || 'Unknown';
 
     const userRole = editor?.role || l.userRole || l.role || 'N/A';
@@ -89,11 +85,15 @@ const AuditLogs = () => {
       userAgent: l.userAgent || l.ua || null,
       resourceId: l.sale_id?._id || l.resourceId || l.resource_id || null,
       resourceType: l.sale_id ? 'sale' : l.resourceType || null,
-      changes: l.changes || (l.before_data || l.after_data ? { before: l.before_data, after: l.after_data } : {}),
+      changes:
+        l.changes ||
+        (l.before_data || l.after_data
+          ? { before: l.before_data, after: l.after_data }
+          : {}),
       status: l.status || 'success',
       raw: l,
     };
-  });
+  }) : [];
 
   const handleSearch = () => {
     const newFilters = {
@@ -138,7 +138,7 @@ const AuditLogs = () => {
       read: 'geekblue',
       export: 'orange',
     };
-    
+
     const baseAction = action.split('_')[0];
     return actionColors[baseAction] || 'default';
   };
@@ -154,13 +154,27 @@ const AuditLogs = () => {
       key: 'user',
       render: (text, record) => (
         <Space>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#1890ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
             {text?.[0]}
           </div>
           <div>
             <Text strong>{text}</Text>
             <br />
-            <Tag size="small" color="blue">{record.userRole}</Tag>
+            <Tag size="small" color="blue">
+              {record.userRole}
+            </Tag>
           </div>
         </Space>
       ),
@@ -191,8 +205,8 @@ const AuditLogs = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge 
-          status={status === 'success' ? 'success' : 'error'} 
+        <Badge
+          status={status === 'success' ? 'success' : 'error'}
           text={status.toUpperCase()}
         />
       ),
@@ -216,8 +230,8 @@ const AuditLogs = () => {
       key: 'actions',
       render: (_, record) => (
         <Tooltip title="View Details">
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             icon={<EyeOutlined />}
             onClick={() => showLogDetails(record)}
           />
@@ -233,13 +247,19 @@ const AuditLogs = () => {
       log.details?.toLowerCase().includes(q) ||
       log.action?.toLowerCase().includes(q);
 
-    const matchesUser = userFilter === 'all' ? true : log.userRole === userFilter;
-    const baseAction = actionFilter === 'all' ? true : log.action?.startsWith(actionFilter);
+    const matchesUser =
+      userFilter === 'all' ? true : log.userRole === userFilter;
+    const baseAction =
+      actionFilter === 'all' ? true : log.action?.startsWith(actionFilter);
 
     let matchesDate = true;
     if (dateRange?.[0] && dateRange?.[1]) {
-      const start = dateRange[0].toDate ? dateRange[0].toDate() : new Date(dateRange[0]);
-      const end = dateRange[1].toDate ? dateRange[1].toDate() : new Date(dateRange[1]);
+      const start = dateRange[0].toDate
+        ? dateRange[0].toDate()
+        : new Date(dateRange[0]);
+      const end = dateRange[1].toDate
+        ? dateRange[1].toDate()
+        : new Date(dateRange[1]);
       const t = log.timestamp ? new Date(log.timestamp) : null;
       if (t) matchesDate = t >= start && t <= end;
     }
@@ -260,14 +280,14 @@ const AuditLogs = () => {
         </Col>
         <Col>
           <Space>
-            <Button 
+            <Button
               icon={<ReloadOutlined />}
               onClick={handleSearch}
               loading={loading}
             >
               Refresh
             </Button>
-            <Button 
+            <Button
               type="primary"
               icon={<DownloadOutlined />}
               onClick={handleExport}
@@ -325,8 +345,8 @@ const AuditLogs = () => {
             />
           </Col>
           <Col xs={24} md={4}>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               icon={<FilterOutlined />}
               onClick={handleSearch}
               style={{ width: '100%' }}
@@ -347,7 +367,7 @@ const AuditLogs = () => {
           pagination={{
             pageSize: 20,
             showSizeChanger: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} audit logs`,
           }}
           scroll={{ x: 1000 }}
@@ -382,15 +402,17 @@ const AuditLogs = () => {
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Status">
-              <Badge 
-                status={selectedLog.status === 'success' ? 'success' : 'error'} 
+              <Badge
+                status={selectedLog.status === 'success' ? 'success' : 'error'}
                 text={selectedLog.status.toUpperCase()}
               />
             </Descriptions.Item>
             <Descriptions.Item label="Timestamp">
               <Space>
                 <CalendarOutlined />
-                <Text>{dayjs(selectedLog.timestamp).format('MMMM D, YYYY HH:mm:ss')}</Text>
+                <Text>
+                  {dayjs(selectedLog.timestamp).format('MMMM D, YYYY HH:mm:ss')}
+                </Text>
               </Space>
             </Descriptions.Item>
             <Descriptions.Item label="Details">
@@ -414,21 +436,30 @@ const AuditLogs = () => {
                 </Space>
               </Descriptions.Item>
             )}
-            {selectedLog.changes && Object.keys(selectedLog.changes).length > 0 && (
-              <Descriptions.Item label="Changes">
-                <div style={{ background: '#f5f5f5', padding: '8px', borderRadius: '4px' }}>
-                  {Object.entries(selectedLog.changes).map(([field, change]) => (
-                    <div key={field} style={{ marginBottom: '4px' }}>
-                      <Text strong>{field}:</Text>{' '}
-                      <Text type="secondary">from</Text>{' '}
-                      <Text code>{change.from ?? 'null'}</Text>{' '}
-                      <Text type="secondary">to</Text>{' '}
-                      <Text code>{change.to ?? 'null'}</Text>
-                    </div>
-                  ))}
-                </div>
-              </Descriptions.Item>
-            )}
+            {selectedLog.changes &&
+              Object.keys(selectedLog.changes).length > 0 && (
+                <Descriptions.Item label="Changes">
+                  <div
+                    style={{
+                      background: '#f5f5f5',
+                      padding: '8px',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    {Object.entries(selectedLog.changes).map(
+                      ([field, change]) => (
+                        <div key={field} style={{ marginBottom: '4px' }}>
+                          <Text strong>{field}:</Text>{' '}
+                          <Text type="secondary">from</Text>{' '}
+                          <Text code>{change.from ?? 'null'}</Text>{' '}
+                          <Text type="secondary">to</Text>{' '}
+                          <Text code>{change.to ?? 'null'}</Text>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </Descriptions.Item>
+              )}
           </Descriptions>
         )}
       </Modal>

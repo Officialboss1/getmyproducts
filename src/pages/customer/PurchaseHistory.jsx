@@ -38,12 +38,9 @@ const PurchaseHistory = ({ user }) => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [orderModalVisible, setOrderModalVisible] = useState(false);
 
-  const {
-    purchases,
-    loading,
-    error,
-    refetch,
-  } = useCustomerPurchases(user?._id);
+  const { purchases, loading, error, refetch } = useCustomerPurchases(
+    user?._id
+  );
 
   // Mock data - replace with actual API data
   const mockPurchases = [
@@ -102,8 +99,10 @@ const PurchaseHistory = ({ user }) => {
   const stats = {
     totalOrders: data.length,
     totalSpent: data.reduce((sum, order) => sum + order.total, 0),
-    deliveredOrders: data.filter(order => order.status === 'delivered').length,
-    averageOrder: data.reduce((sum, order) => sum + order.total, 0) / data.length,
+    deliveredOrders: data.filter((order) => order.status === 'delivered')
+      .length,
+    averageOrder:
+      data.reduce((sum, order) => sum + order.total, 0) / data.length,
   };
 
   const getStatusTag = (status) => {
@@ -122,9 +121,10 @@ const PurchaseHistory = ({ user }) => {
     setOrderModalVisible(true);
   };
 
-  const filteredData = data.filter(order =>
-    order.product?.toLowerCase().includes(searchText.toLowerCase()) ||
-    order.orderNumber?.toLowerCase().includes(searchText.toLowerCase())
+  const filteredData = data.filter(
+    (order) =>
+      order.product?.toLowerCase().includes(searchText.toLowerCase()) ||
+      order.orderNumber?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const columns = [
@@ -201,9 +201,7 @@ const PurchaseHistory = ({ user }) => {
           </Text>
         </Col>
         <Col>
-          <Button icon={<DownloadOutlined />}>
-            Export History
-          </Button>
+          <Button icon={<DownloadOutlined />}>Export History</Button>
         </Col>
       </Row>
 
@@ -226,7 +224,7 @@ const PurchaseHistory = ({ user }) => {
               value={stats.totalSpent}
               prefix={<DollarOutlined />}
               valueStyle={{ color: '#52c41a' }}
-            //   prefix="₦"
+              //   prefix="₦"
             />
           </Card>
         </Col>
@@ -300,7 +298,7 @@ const PurchaseHistory = ({ user }) => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => 
+            showTotal: (total, range) =>
               `${range[0]}-${range[1]} of ${total} orders`,
           }}
         />

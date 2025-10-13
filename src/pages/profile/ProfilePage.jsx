@@ -64,7 +64,8 @@ const ProfilePage = ({ userId }) => {
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const targetUserId = userId || currentUser._id;
 
-  const { profile, loading, error, canEdit, updateProfile, deleteUserAvatar } = useUserProfile(targetUserId);
+  const { profile, loading, error, canEdit, updateProfile, deleteUserAvatar } =
+    useUserProfile(targetUserId);
 
   useEffect(() => {
     if (profile) {
@@ -77,7 +78,7 @@ const ProfilePage = ({ userId }) => {
       const formData = new FormData();
 
       // Add form values
-      Object.keys(values).forEach(key => {
+      Object.keys(values).forEach((key) => {
         if (values[key] !== undefined && values[key] !== null) {
           formData.append(key, values[key]);
         }
@@ -102,7 +103,9 @@ const ProfilePage = ({ userId }) => {
         localStorage.setItem('user', JSON.stringify(updatedUser));
 
         // Dispatch custom event to notify other components of user data update
-        window.dispatchEvent(new CustomEvent('userDataUpdated', { detail: updatedUser }));
+        window.dispatchEvent(
+          new CustomEvent('userDataUpdated', { detail: updatedUser })
+        );
       }
 
       setEditing(false);
@@ -136,9 +139,9 @@ const ProfilePage = ({ userId }) => {
   };
 
   const handleNotificationChange = (key, value) => {
-    setNotificationSettings(prev => ({
+    setNotificationSettings((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
     message.success('Notification settings updated!');
   };
@@ -146,16 +149,24 @@ const ProfilePage = ({ userId }) => {
   const handlePasswordChange = async (values) => {
     try {
       // TODO: Implement password change API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       message.success('Password updated successfully!');
-      form.setFieldsValue({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      form.setFieldsValue({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
     } catch (error) {
       message.error('Failed to update password');
     }
   };
 
   const beforeAvatarUpload = (file) => {
-    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/gif' || file.type === 'image/webp';
+    const isJpgOrPng =
+      file.type === 'image/jpeg' ||
+      file.type === 'image/png' ||
+      file.type === 'image/gif' ||
+      file.type === 'image/webp';
     if (!isJpgOrPng) {
       message.error('You can only upload image files!');
     }
@@ -187,26 +198,72 @@ const ProfilePage = ({ userId }) => {
     const targetUserRole = profile?.role;
 
     if (currentUserRole === 'super_admin') {
-      return ['firstName', 'lastName', 'email', 'phone', 'address', 'bio', 'department', 'position', 'company', 'status', 'notes'];
+      return [
+        'firstName',
+        'lastName',
+        'email',
+        'phone',
+        'address',
+        'bio',
+        'department',
+        'position',
+        'company',
+        'status',
+        'notes',
+      ];
     }
 
     if (currentUserRole === 'admin') {
       const lowerRoles = ['salesperson', 'customer', 'team_head'];
       if (lowerRoles.includes(targetUserRole)) {
-        return ['firstName', 'lastName', 'email', 'phone', 'address', 'bio', 'department', 'position', 'status', 'notes'];
+        return [
+          'firstName',
+          'lastName',
+          'email',
+          'phone',
+          'address',
+          'bio',
+          'department',
+          'position',
+          'status',
+          'notes',
+        ];
       }
-      return ['firstName', 'lastName', 'phone', 'address', 'bio', 'department', 'position'];
+      return [
+        'firstName',
+        'lastName',
+        'phone',
+        'address',
+        'bio',
+        'department',
+        'position',
+      ];
     }
 
     // Own profile
-    return ['firstName', 'lastName', 'phone', 'address', 'bio', 'department', 'position'];
+    return [
+      'firstName',
+      'lastName',
+      'phone',
+      'address',
+      'bio',
+      'department',
+      'position',
+    ];
   };
 
   const editableFields = getEditableFields();
 
   if (loading && !profile) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '400px',
+        }}
+      >
         <Spin size="large" />
       </div>
     );
@@ -251,10 +308,15 @@ const ProfilePage = ({ userId }) => {
             Back to Dashboard
           </Button>
           <Title level={2} style={{ margin: 0 }}>
-            <UserOutlined /> {isOwnProfile ? 'My Profile' : `${profile.firstName} ${profile.lastName}'s Profile`}
+            <UserOutlined />{' '}
+            {isOwnProfile
+              ? 'My Profile'
+              : `${profile.firstName} ${profile.lastName}'s Profile`}
           </Title>
           <Text type="secondary">
-            {isOwnProfile ? 'Manage your personal information and account settings' : 'View and manage user profile'}
+            {isOwnProfile
+              ? 'Manage your personal information and account settings'
+              : 'View and manage user profile'}
           </Text>
         </Col>
         <Col>
@@ -268,7 +330,12 @@ const ProfilePage = ({ userId }) => {
             </Button>
           ) : editing ? (
             <Space>
-              <Button onClick={() => { setEditing(false); setAvatarFile(null); }}>
+              <Button
+                onClick={() => {
+                  setEditing(false);
+                  setAvatarFile(null);
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -303,7 +370,9 @@ const ProfilePage = ({ userId }) => {
                   <Form.Item
                     label="First Name"
                     name="firstName"
-                    rules={[{ required: true, message: 'Please enter first name' }]}
+                    rules={[
+                      { required: true, message: 'Please enter first name' },
+                    ]}
                   >
                     <Input prefix={<UserOutlined />} placeholder="First Name" />
                   </Form.Item>
@@ -312,7 +381,9 @@ const ProfilePage = ({ userId }) => {
                   <Form.Item
                     label="Last Name"
                     name="lastName"
-                    rules={[{ required: true, message: 'Please enter last name' }]}
+                    rules={[
+                      { required: true, message: 'Please enter last name' },
+                    ]}
                   >
                     <Input placeholder="Last Name" />
                   </Form.Item>
@@ -326,33 +397,36 @@ const ProfilePage = ({ userId }) => {
                     name="email"
                     rules={[
                       { required: true, message: 'Please enter email' },
-                      { type: 'email', message: 'Please enter a valid email' }
+                      { type: 'email', message: 'Please enter a valid email' },
                     ]}
                   >
-                    <Input prefix={<MailOutlined />} placeholder="Email" disabled={!editableFields.includes('email')} />
+                    <Input
+                      prefix={<MailOutlined />}
+                      placeholder="Email"
+                      disabled={!editableFields.includes('email')}
+                    />
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Phone"
-                    name="phone"
-                  >
-                    <Input prefix={<PhoneOutlined />} placeholder="Phone Number" disabled={!editableFields.includes('phone')} />
+                  <Form.Item label="Phone" name="phone">
+                    <Input
+                      prefix={<PhoneOutlined />}
+                      placeholder="Phone Number"
+                      disabled={!editableFields.includes('phone')}
+                    />
                   </Form.Item>
                 </Col>
               </Row>
 
-              <Form.Item
-                label="Address"
-                name="address"
-              >
-                <Input prefix={<EnvironmentOutlined />} placeholder="Full Address" disabled={!editableFields.includes('address')} />
+              <Form.Item label="Address" name="address">
+                <Input
+                  prefix={<EnvironmentOutlined />}
+                  placeholder="Full Address"
+                  disabled={!editableFields.includes('address')}
+                />
               </Form.Item>
 
-              <Form.Item
-                label="Bio"
-                name="bio"
-              >
+              <Form.Item label="Bio" name="bio">
                 <TextArea
                   rows={4}
                   placeholder="Tell us about yourself, your experience, and your goals..."
@@ -364,14 +438,16 @@ const ProfilePage = ({ userId }) => {
 
               <Row gutter={16}>
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Department"
-                    name="department"
-                  >
-                    <Select placeholder="Select Department" disabled={!editableFields.includes('department')}>
+                  <Form.Item label="Department" name="department">
+                    <Select
+                      placeholder="Select Department"
+                      disabled={!editableFields.includes('department')}
+                    >
                       <Option value="Sales">Sales</Option>
                       <Option value="Marketing">Marketing</Option>
-                      <Option value="Business Development">Business Development</Option>
+                      <Option value="Business Development">
+                        Business Development
+                      </Option>
                       <Option value="Customer Success">Customer Success</Option>
                       <Option value="IT">IT</Option>
                       <Option value="HR">HR</Option>
@@ -379,34 +455,35 @@ const ProfilePage = ({ userId }) => {
                   </Form.Item>
                 </Col>
                 <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Position"
-                    name="position"
-                  >
-                    <Input placeholder="Your position or title" disabled={!editableFields.includes('position')} />
+                  <Form.Item label="Position" name="position">
+                    <Input
+                      placeholder="Your position or title"
+                      disabled={!editableFields.includes('position')}
+                    />
                   </Form.Item>
                 </Col>
               </Row>
 
               {/* Admin fields */}
-              {(currentUser.role === 'super_admin' || currentUser.role === 'admin') && (
+              {(currentUser.role === 'super_admin' ||
+                currentUser.role === 'admin') && (
                 <>
                   <Divider>Administrative Information</Divider>
                   <Row gutter={16}>
                     <Col xs={24} md={12}>
-                      <Form.Item
-                        label="Company"
-                        name="company"
-                      >
-                        <Input placeholder="Company" disabled={!editableFields.includes('company')} />
+                      <Form.Item label="Company" name="company">
+                        <Input
+                          placeholder="Company"
+                          disabled={!editableFields.includes('company')}
+                        />
                       </Form.Item>
                     </Col>
                     <Col xs={24} md={12}>
-                      <Form.Item
-                        label="Status"
-                        name="status"
-                      >
-                        <Select placeholder="Select Status" disabled={!editableFields.includes('status')}>
+                      <Form.Item label="Status" name="status">
+                        <Select
+                          placeholder="Select Status"
+                          disabled={!editableFields.includes('status')}
+                        >
                           <Option value="active">Active</Option>
                           <Option value="inactive">Inactive</Option>
                           <Option value="suspended">Suspended</Option>
@@ -414,10 +491,7 @@ const ProfilePage = ({ userId }) => {
                       </Form.Item>
                     </Col>
                   </Row>
-                  <Form.Item
-                    label="Notes"
-                    name="notes"
-                  >
+                  <Form.Item label="Notes" name="notes">
                     <TextArea
                       rows={3}
                       placeholder="Administrative notes..."
@@ -430,7 +504,9 @@ const ProfilePage = ({ userId }) => {
           </Card>
 
           {/* Performance Stats for salespeople and customers */}
-          {(profile.role === 'salesperson' || profile.role === 'customer' || profile.role === 'team_head') && (
+          {(profile.role === 'salesperson' ||
+            profile.role === 'customer' ||
+            profile.role === 'team_head') && (
             <Card title="Performance Overview" style={{ marginBottom: 24 }}>
               <Row gutter={16}>
                 <Col xs={12} sm={6}>
@@ -472,25 +548,36 @@ const ProfilePage = ({ userId }) => {
           <Card title="Account Information">
             <Descriptions column={1}>
               <Descriptions.Item label="Role">
-                <Tag color={
-                  profile.role === 'super_admin' ? 'red' :
-                  profile.role === 'admin' ? 'orange' :
-                  profile.role === 'salesperson' ? 'blue' :
-                  profile.role === 'customer' ? 'green' : 'default'
-                }>
+                <Tag
+                  color={
+                    profile.role === 'super_admin'
+                      ? 'red'
+                      : profile.role === 'admin'
+                        ? 'orange'
+                        : profile.role === 'salesperson'
+                          ? 'blue'
+                          : profile.role === 'customer'
+                            ? 'green'
+                            : 'default'
+                  }
+                >
                   {profile.role?.replace('_', ' ').toUpperCase()}
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Member Since">
                 <Space>
                   <CalendarOutlined />
-                  {profile.createdAt ? dayjs(profile.createdAt).format('MMMM D, YYYY') : 'N/A'}
+                  {profile.createdAt
+                    ? dayjs(profile.createdAt).format('MMMM D, YYYY')
+                    : 'N/A'}
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label="Last Login">
                 <Space>
                   <CalendarOutlined />
-                  {profile.lastLogin ? dayjs(profile.lastLogin).format('MMMM D, YYYY HH:mm') : 'Never'}
+                  {profile.lastLogin
+                    ? dayjs(profile.lastLogin).format('MMMM D, YYYY HH:mm')
+                    : 'Never'}
                 </Space>
               </Descriptions.Item>
               {profile.lastOrder && (
@@ -522,8 +609,8 @@ const ProfilePage = ({ userId }) => {
                   avatarFile
                     ? URL.createObjectURL(avatarFile) // Show selected file preview
                     : profile.avatar
-                    ? `http://localhost:5000/${profile.avatar}` // Show uploaded avatar
-                    : undefined // Show default icon
+                      ? `http://localhost:5000/${profile.avatar}` // Show uploaded avatar
+                      : undefined // Show default icon
                 }
                 style={{ marginBottom: 16 }}
               />
@@ -560,10 +647,14 @@ const ProfilePage = ({ userId }) => {
             <Title level={4} style={{ margin: 0 }}>
               {profile.firstName} {profile.lastName}
             </Title>
-            <Text type="secondary">{profile.position || profile.role?.replace('_', ' ')}</Text>
+            <Text type="secondary">
+              {profile.position || profile.role?.replace('_', ' ')}
+            </Text>
             <Divider />
             <Text type="secondary" style={{ fontSize: '12px' }}>
-              {canEdit ? 'Click the camera icon to update your profile picture' : 'Profile picture'}
+              {canEdit
+                ? 'Click the camera icon to update your profile picture'
+                : 'Profile picture'}
             </Text>
           </Card>
 
@@ -611,13 +702,21 @@ const ProfilePage = ({ userId }) => {
                         key={item.key}
                         size="small"
                         checked={item.enabled}
-                        onChange={(checked) => handleNotificationChange(item.key, checked)}
+                        onChange={(checked) =>
+                          handleNotificationChange(item.key, checked)
+                        }
                       />,
                     ]}
                   >
                     <List.Item.Meta
-                      title={<Text style={{ fontSize: '14px' }}>{item.title}</Text>}
-                      description={<Text type="secondary" style={{ fontSize: '12px' }}>{item.description}</Text>}
+                      title={
+                        <Text style={{ fontSize: '14px' }}>{item.title}</Text>
+                      }
+                      description={
+                        <Text type="secondary" style={{ fontSize: '12px' }}>
+                          {item.description}
+                        </Text>
+                      }
                     />
                   </List.Item>
                 )}
@@ -628,23 +727,31 @@ const ProfilePage = ({ userId }) => {
           {/* Change Password - only for own profile */}
           {isOwnProfile && (
             <Card title="Security">
-              <Form
-                layout="vertical"
-                onFinish={handlePasswordChange}
-              >
+              <Form layout="vertical" onFinish={handlePasswordChange}>
                 <Form.Item
                   label="Current Password"
                   name="currentPassword"
-                  rules={[{ required: true, message: 'Please enter current password' }]}
+                  rules={[
+                    {
+                      required: true,
+                      message: 'Please enter current password',
+                    },
+                  ]}
                 >
-                  <Input.Password prefix={<LockOutlined />} placeholder="Current password" />
+                  <Input.Password
+                    prefix={<LockOutlined />}
+                    placeholder="Current password"
+                  />
                 </Form.Item>
                 <Form.Item
                   label="New Password"
                   name="newPassword"
                   rules={[
                     { required: true, message: 'Please enter new password' },
-                    { min: 6, message: 'Password must be at least 6 characters' }
+                    {
+                      min: 6,
+                      message: 'Password must be at least 6 characters',
+                    },
                   ]}
                 >
                   <Input.Password placeholder="New password" />
@@ -660,7 +767,9 @@ const ProfilePage = ({ userId }) => {
                         if (!value || getFieldValue('newPassword') === value) {
                           return Promise.resolve();
                         }
-                        return Promise.reject(new Error('Passwords do not match'));
+                        return Promise.reject(
+                          new Error('Passwords do not match')
+                        );
                       },
                     }),
                   ]}

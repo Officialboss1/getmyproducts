@@ -20,7 +20,7 @@ import {
   Popconfirm,
   Divider,
 } from 'antd';
-import { superAdminAPI } from '../../services/superAdminApi';
+import { superAdminAPI } from '../../api/services/superAdminApi';
 import {
   SearchOutlined,
   FilterOutlined,
@@ -69,7 +69,9 @@ const SalespersonsManagement = () => {
       const allUsers = Array.isArray(payload) ? payload : payload.items || [];
 
       // Filter only users with role 'salesperson'
-      const salesUsers = allUsers.filter(user => (user.role || '').toLowerCase() === 'salesperson');
+      const salesUsers = allUsers.filter(
+        (user) => (user.role || '').toLowerCase() === 'salesperson'
+      );
       setSalespersons(salesUsers);
     } catch (err) {
       console.error('Error fetching salespersons', err);
@@ -151,20 +153,24 @@ const SalespersonsManagement = () => {
   // Statistics
   const stats = {
     total: salespersons.length,
-    active: salespersons.filter(sp => sp.status === 'active').length,
-    teamHeads: salespersons.filter(sp => sp.isTeamHead).length,
+    active: salespersons.filter((sp) => sp.status === 'active').length,
+    teamHeads: salespersons.filter((sp) => sp.isTeamHead).length,
     averagePerformance: salespersons.length
-      ? Math.round(salespersons.reduce((acc, sp) => acc + (sp.totalOrders || 0), 0) / salespersons.length)
+      ? Math.round(
+          salespersons.reduce((acc, sp) => acc + (sp.totalOrders || 0), 0) /
+            salespersons.length
+        )
       : 0,
   };
 
   // Filtered data
-  const filteredSalespersons = salespersons.filter(sp =>
-    (sp.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-     sp.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-     sp.email?.toLowerCase().includes(searchText.toLowerCase())) &&
-    (statusFilter === 'all' || sp.status === statusFilter) &&
-    (teamFilter === 'all' || sp.team === teamFilter)
+  const filteredSalespersons = salespersons.filter(
+    (sp) =>
+      (sp.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        sp.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        sp.email?.toLowerCase().includes(searchText.toLowerCase())) &&
+      (statusFilter === 'all' || sp.status === statusFilter) &&
+      (teamFilter === 'all' || sp.team === teamFilter)
   );
 
   const columns = [
@@ -173,12 +179,27 @@ const SalespersonsManagement = () => {
       key: 'name',
       render: (_, record) => (
         <Space>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1890ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            {record.firstName?.[0]}{record.lastName?.[0]}
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#1890ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              fontWeight: 'bold',
+            }}
+          >
+            {record.firstName?.[0]}
+            {record.lastName?.[0]}
           </div>
           <div>
             <Space>
-              <Text strong>{record.firstName} {record.lastName}</Text>
+              <Text strong>
+                {record.firstName} {record.lastName}
+              </Text>
               {record.isTeamHead && (
                 <Tooltip title="Team Head">
                   <CrownOutlined style={{ color: '#faad14' }} />
@@ -221,7 +242,10 @@ const SalespersonsManagement = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => (
-        <Badge status={status === 'active' ? 'success' : 'default'} text={status?.toUpperCase() || 'N/A'} />
+        <Badge
+          status={status === 'active' ? 'success' : 'default'}
+          text={status?.toUpperCase() || 'N/A'}
+        />
       ),
     },
     {
@@ -229,13 +253,20 @@ const SalespersonsManagement = () => {
       key: 'performance',
       render: (_, record) => {
         const totalSales = record.totalOrders || 0;
-        const performance = totalSales > 0 ? Math.min(100, (totalSales / 10) * 100) : 0; // Example: 10 sales = 100%
+        const performance =
+          totalSales > 0 ? Math.min(100, (totalSales / 10) * 100) : 0; // Example: 10 sales = 100%
         return (
           <Space direction="vertical" style={{ width: 150 }}>
             <Progress
               percent={performance}
               size="small"
-              status={performance >= 80 ? 'success' : performance >= 60 ? 'active' : 'exception'}
+              status={
+                performance >= 80
+                  ? 'success'
+                  : performance >= 60
+                    ? 'active'
+                    : 'exception'
+              }
             />
             <Text type="secondary" style={{ fontSize: '12px' }}>
               {totalSales} sales
@@ -248,7 +279,11 @@ const SalespersonsManagement = () => {
       title: 'Last Active',
       key: 'lastActive',
       render: (_, record) => (
-        <Text type="secondary">{record.lastOrder ? new Date(record.lastOrder).toLocaleDateString() : 'Never'}</Text>
+        <Text type="secondary">
+          {record.lastOrder
+            ? new Date(record.lastOrder).toLocaleDateString()
+            : 'Never'}
+        </Text>
       ),
     },
     {
@@ -257,10 +292,18 @@ const SalespersonsManagement = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
-            <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewDetails(record)} />
+            <Button
+              type="link"
+              icon={<EyeOutlined />}
+              onClick={() => handleViewDetails(record)}
+            />
           </Tooltip>
           <Tooltip title="Send Message">
-            <Button type="link" icon={<MailOutlined />} onClick={() => handleSendMessage(record)} />
+            <Button
+              type="link"
+              icon={<MailOutlined />}
+              onClick={() => handleSendMessage(record)}
+            />
           </Tooltip>
         </Space>
       ),
@@ -299,7 +342,11 @@ const SalespersonsManagement = () => {
         </Col>
         <Col xs={24} sm={6} key="active">
           <Card>
-            <Statistic title="Active" value={stats.active} valueStyle={{ color: '#52c41a' }} />
+            <Statistic
+              title="Active"
+              value={stats.active}
+              valueStyle={{ color: '#52c41a' }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={6} key="teamHeads">
@@ -342,9 +389,15 @@ const SalespersonsManagement = () => {
               value={statusFilter}
               onChange={setStatusFilter}
             >
-              <Option value="all" key="all-status">All Status</Option>
-              <Option value="active" key="active-status">Active</Option>
-              <Option value="inactive" key="inactive-status">Inactive</Option>
+              <Option value="all" key="all-status">
+                All Status
+              </Option>
+              <Option value="active" key="active-status">
+                Active
+              </Option>
+              <Option value="inactive" key="inactive-status">
+                Inactive
+              </Option>
             </Select>
           </Col>
           <Col xs={24} md={6}>
@@ -354,11 +407,21 @@ const SalespersonsManagement = () => {
               value={teamFilter}
               onChange={setTeamFilter}
             >
-              <Option value="all" key="all-teams">All Teams</Option>
-              <Option value="North Region" key="north-region">North Region</Option>
-              <Option value="South Region" key="south-region">South Region</Option>
-              <Option value="East Region" key="east-region">East Region</Option>
-              <Option value="West Region" key="west-region">West Region</Option>
+              <Option value="all" key="all-teams">
+                All Teams
+              </Option>
+              <Option value="North Region" key="north-region">
+                North Region
+              </Option>
+              <Option value="South Region" key="south-region">
+                South Region
+              </Option>
+              <Option value="East Region" key="east-region">
+                East Region
+              </Option>
+              <Option value="West Region" key="west-region">
+                West Region
+              </Option>
             </Select>
           </Col>
           <Col xs={24} md={4}>
@@ -378,7 +441,8 @@ const SalespersonsManagement = () => {
           pagination={{
             pageSize: 10,
             showSizeChanger: true,
-            showTotal: (total, range) => `${range[0]}-${range[1]} of ${total} salespersons`,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} salespersons`,
           }}
           loading={loading}
         />
@@ -406,7 +470,11 @@ const SalespersonsManagement = () => {
             </Button>
           </Popconfirm>,
           editingUser ? (
-            <Button key="save" type="primary" onClick={() => detailsForm.submit()}>
+            <Button
+              key="save"
+              type="primary"
+              onClick={() => detailsForm.submit()}
+            >
               Save Changes
             </Button>
           ) : (
@@ -422,27 +490,52 @@ const SalespersonsManagement = () => {
             <Row gutter={16} style={{ marginBottom: 24 }}>
               <Col span={12}>
                 <Card size="small" title="Basic Information">
-                  <p><strong>Name:</strong> {selectedUser.firstName} {selectedUser.lastName}</p>
-                  <p><strong>Email:</strong> {selectedUser.email}</p>
-                  <p><strong>Role:</strong> {selectedUser.role}</p>
-                  <p><strong>Phone:</strong> {selectedUser.phone || 'Not set'}</p>
-                  <p><strong>Status:</strong> {selectedUser.status || 'active'}</p>
+                  <p>
+                    <strong>Name:</strong> {selectedUser.firstName}{' '}
+                    {selectedUser.lastName}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {selectedUser.email}
+                  </p>
+                  <p>
+                    <strong>Role:</strong> {selectedUser.role}
+                  </p>
+                  <p>
+                    <strong>Phone:</strong> {selectedUser.phone || 'Not set'}
+                  </p>
+                  <p>
+                    <strong>Status:</strong> {selectedUser.status || 'active'}
+                  </p>
                 </Card>
               </Col>
               <Col span={12}>
                 <Card size="small" title="Performance Stats">
-                  <p><strong>Total Sales:</strong> {selectedUser.totalOrders || 0}</p>
-                  <p><strong>Total Revenue:</strong> ${selectedUser.totalSpent?.toFixed(2) || '0.00'}</p>
-                  <p><strong>Last Active:</strong> {selectedUser.lastOrder ? new Date(selectedUser.lastOrder).toLocaleDateString() : 'Never'}</p>
-                  <p><strong>Created:</strong> {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'Unknown'}</p>
+                  <p>
+                    <strong>Total Sales:</strong>{' '}
+                    {selectedUser.totalOrders || 0}
+                  </p>
+                  <p>
+                    <strong>Total Revenue:</strong> $
+                    {selectedUser.totalSpent?.toFixed(2) || '0.00'}
+                  </p>
+                  <p>
+                    <strong>Last Active:</strong>{' '}
+                    {selectedUser.lastOrder
+                      ? new Date(selectedUser.lastOrder).toLocaleDateString()
+                      : 'Never'}
+                  </p>
+                  <p>
+                    <strong>Created:</strong>{' '}
+                    {selectedUser.createdAt
+                      ? new Date(selectedUser.createdAt).toLocaleDateString()
+                      : 'Unknown'}
+                  </p>
                 </Card>
               </Col>
             </Row>
 
             {/* Edit Form */}
-            {editingUser && (
-              <Divider>Edit User Information</Divider>
-            )}
+            {editingUser && <Divider>Edit User Information</Divider>}
             <Form
               form={detailsForm}
               layout="vertical"
@@ -451,19 +544,34 @@ const SalespersonsManagement = () => {
             >
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item label="First Name" name="firstName" rules={[{ required: true }]} key="firstName">
+                  <Form.Item
+                    label="First Name"
+                    name="firstName"
+                    rules={[{ required: true }]}
+                    key="firstName"
+                  >
                     <Input />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item label="Last Name" name="lastName" rules={[{ required: true }]} key="lastName">
+                  <Form.Item
+                    label="Last Name"
+                    name="lastName"
+                    rules={[{ required: true }]}
+                    key="lastName"
+                  >
                     <Input />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item label="Email" name="email" rules={[{ required: true, type: 'email' }]} key="email">
+                  <Form.Item
+                    label="Email"
+                    name="email"
+                    rules={[{ required: true, type: 'email' }]}
+                    key="email"
+                  >
                     <Input />
                   </Form.Item>
                 </Col>
@@ -475,19 +583,34 @@ const SalespersonsManagement = () => {
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item label="Role" name="role" rules={[{ required: true }]} key="role">
+                  <Form.Item
+                    label="Role"
+                    name="role"
+                    rules={[{ required: true }]}
+                    key="role"
+                  >
                     <Select>
-                      <Option value="salesperson" key="role-salesperson">Salesperson</Option>
-                      <Option value="admin" key="role-admin">Admin</Option>
-                      <Option value="customer" key="role-customer">Customer</Option>
+                      <Option value="salesperson" key="role-salesperson">
+                        Salesperson
+                      </Option>
+                      <Option value="admin" key="role-admin">
+                        Admin
+                      </Option>
+                      <Option value="customer" key="role-customer">
+                        Customer
+                      </Option>
                     </Select>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item label="Status" name="status" key="status">
                     <Select>
-                      <Option value="active" key="status-active">Active</Option>
-                      <Option value="inactive" key="status-inactive">Inactive</Option>
+                      <Option value="active" key="status-active">
+                        Active
+                      </Option>
+                      <Option value="inactive" key="status-inactive">
+                        Inactive
+                      </Option>
                     </Select>
                   </Form.Item>
                 </Col>
@@ -506,7 +629,11 @@ const SalespersonsManagement = () => {
           <Button key="cancel" onClick={() => setMessageModalVisible(false)}>
             Cancel
           </Button>,
-          <Button key="send" type="primary" onClick={() => messageForm.submit()}>
+          <Button
+            key="send"
+            type="primary"
+            onClick={() => messageForm.submit()}
+          >
             <SendOutlined /> Send Message
           </Button>,
         ]}
@@ -530,10 +657,7 @@ const SalespersonsManagement = () => {
             rules={[{ required: true, message: 'Please enter a message' }]}
             key="message"
           >
-            <Input.TextArea
-              rows={6}
-              placeholder="Type your message here..."
-            />
+            <Input.TextArea rows={6} placeholder="Type your message here..." />
           </Form.Item>
           <Text type="secondary">
             This message will be sent via email to {selectedUser?.email}
@@ -545,3 +669,6 @@ const SalespersonsManagement = () => {
 };
 
 export default SalespersonsManagement;
+
+
+

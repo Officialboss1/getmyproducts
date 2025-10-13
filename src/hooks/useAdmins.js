@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { superAdminAPI } from '../services/superAdminApi';
+import { superAdminAPI } from '../../src/api/services/superAdminApi';
 
 export const useAdmins = () => {
   const [admins, setAdmins] = useState([]);
@@ -63,3 +63,6 @@ export const useAdmins = () => {
     refetch: fetchAdmins,
   };
 };
+
+
+

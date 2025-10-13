@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/adminApi';
+import { adminAPI } from '../../src/api/services/adminApi';
 
 export const useUsers = (role = '', options = {}) => {
   const { all = false } = options;
@@ -77,3 +77,6 @@ export const useUsers = (role = '', options = {}) => {
     refetch: fetchUsers,
   };
 };
+
+
+

@@ -22,9 +22,12 @@ import {
   EyeOutlined,
   ReloadOutlined,
   BarChartOutlined,
+  MessageOutlined,
+  ShoppingOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { superAdminAPI } from '../../services/superAdminApi';
+import { superAdminAPI } from '../../api/services/superAdminApi';
 
 const { Title, Text } = Typography;
 
@@ -40,28 +43,38 @@ const SuperAdminDashboard = () => {
     setError(null);
     try {
       // Fetch live data from backend
-      const [summaryRes, activitiesRes, usersRes] = await Promise.all([
+      const [summaryRes, activitiesRes, usersRes, chatRes] = await Promise.all([
         superAdminAPI.getSalesSummary(),
         superAdminAPI.getRecentActivities(),
         superAdminAPI.getAllUsers(),
+        superAdminAPI.getChatSummary(),
       ]);
 
       console.log('Sales Summary Response:', summaryRes?.data);
       console.log('Recent Activities Response:', activitiesRes?.data);
       console.log('All Users Response:', usersRes?.data);
+      console.log('Chat Summary Response:', chatRes?.data);
 
       const summaryData = summaryRes?.data || {};
-      const activities = Array.isArray(activitiesRes?.data) ? activitiesRes.data : [];
+      const activities = Array.isArray(activitiesRes?.data)
+        ? activitiesRes.data
+        : [];
       const users = Array.isArray(usersRes?.data) ? usersRes.data : [];
+      const chatData = chatRes?.data || {};
 
       const analytics = {
         totalSales: summaryData.totalSales ?? 0,
         totalRevenue: summaryData.totalRevenue ?? 0,
         topPerformers: summaryData.topPerformers || [],
-        totalAdmins: users.filter(u => u.role === 'admin').length,
-        totalSalespersons: users.filter(u => u.role === 'salesperson').length,
-        totalCustomers: users.filter(u => u.role === 'customer').length,
+        totalAdmins: users.filter((u) => u.role === 'admin').length,
+        totalSalespersons: users.filter((u) => u.role === 'salesperson').length,
+        totalCustomers: users.filter((u) => u.role === 'customer').length,
         systemHealth: summaryData.systemHealth ?? 98,
+        // Chat statistics
+        totalChats: chatData.totalChats ?? 0,
+        activeChats: chatData.activeChats ?? 0,
+        resolvedChats: chatData.resolvedChats ?? 0,
+        unassignedChats: chatData.unassignedChats ?? 0,
       };
 
       console.log('Processed Analytics:', analytics);
@@ -85,45 +98,53 @@ const SuperAdminDashboard = () => {
   const data = summary || {};
 
   const kpiCards = [
-  {
-    title: 'Total Sales',
-    value: data.totalSales ?? 0,
-    prefix: <ShoppingCartOutlined />,
-    valueStyle: { color: '#1890ff' },
-    suffix: 'units',
-  },
-  {
-    title: 'Total Revenue',
-    value: data.totalRevenue != null ? data.totalRevenue.toLocaleString() : '0',
-    prefix: <DollarOutlined />,
-    valueStyle: { color: '#52c41a' },
-  },
-  {
-    title: 'Admins',
-    value: data.totalAdmins ?? 0,
-    prefix: <UserOutlined />,
-    valueStyle: { color: '#722ed1' },
-  },
-  {
-    title: 'Salespersons',
-    value: data.totalSalespersons ?? 0,
-    prefix: <TeamOutlined />,
-    valueStyle: { color: '#fa8c16' },
-  },
-  {
-    title: 'Customers',
-    value: data.totalCustomers ?? 0,
-    prefix: <UserOutlined />,
-    valueStyle: { color: '#13c2c2' },
-  },
-  {
-    title: 'System Health',
-    value: data.systemHealth ?? 0,
-    suffix: '%',
-    valueStyle: { color: (data.systemHealth ?? 0) > 95 ? '#52c41a' : '#faad14' },
-  },
-];
-
+    {
+      title: 'Total Sales',
+      value: data.totalSales ?? 0,
+      prefix: <ShoppingCartOutlined />,
+      valueStyle: { color: '#1890ff' },
+      suffix: 'units',
+    },
+    {
+      title: 'Total Revenue',
+      value:
+        data.totalRevenue != null ? data.totalRevenue.toLocaleString() : '0',
+      prefix: <DollarOutlined />,
+      valueStyle: { color: '#52c41a' },
+    },
+    {
+      title: 'Admins',
+      value: data.totalAdmins ?? 0,
+      prefix: <UserOutlined />,
+      valueStyle: { color: '#722ed1' },
+    },
+    {
+      title: 'Salespersons',
+      value: data.totalSalespersons ?? 0,
+      prefix: <TeamOutlined />,
+      valueStyle: { color: '#fa8c16' },
+    },
+    {
+      title: 'Customers',
+      value: data.totalCustomers ?? 0,
+      prefix: <UserOutlined />,
+      valueStyle: { color: '#13c2c2' },
+    },
+    {
+      title: 'Active Chats',
+      value: data.activeChats ?? 0,
+      prefix: <MessageOutlined />,
+      valueStyle: { color: '#fa541c' },
+    },
+    {
+      title: 'System Health',
+      value: data.systemHealth ?? 0,
+      suffix: '%',
+      valueStyle: {
+        color: (data.systemHealth ?? 0) > 95 ? '#52c41a' : '#faad14',
+      },
+    },
+  ];
 
   const topPerformersColumns = [
     {
@@ -131,7 +152,17 @@ const SuperAdminDashboard = () => {
       dataIndex: 'rank',
       key: 'rank',
       render: (_, __, index) => (
-        <Tag color={index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : 'default'}>
+        <Tag
+          color={
+            index === 0
+              ? 'gold'
+              : index === 1
+                ? 'silver'
+                : index === 2
+                  ? 'bronze'
+                  : 'default'
+          }
+        >
           #{index + 1}
         </Tag>
       ),
@@ -181,10 +212,10 @@ const SuperAdminDashboard = () => {
               action.includes('create')
                 ? 'green'
                 : action.includes('update')
-                ? 'blue'
-                : action.includes('delete')
-                ? 'red'
-                : 'default'
+                  ? 'blue'
+                  : action.includes('delete')
+                    ? 'red'
+                    : 'default'
             }
           >
             {action}
@@ -318,7 +349,7 @@ const SuperAdminDashboard = () => {
         {/* Quick Actions */}
         <Card title="Quick Actions" style={{ marginTop: 24 }}>
           <Row gutter={[16, 16]}>
-            <Col xs={24} sm={8}>
+            <Col xs={24} sm={6}>
               <Card
                 hoverable
                 onClick={() => navigate('/admins')}
@@ -331,30 +362,43 @@ const SuperAdminDashboard = () => {
                 <Text type="secondary">Create and manage admin accounts</Text>
               </Card>
             </Col>
-            <Col xs={24} sm={8}>
+            <Col xs={24} sm={6}>
               <Card
                 hoverable
-                onClick={() => navigate('/targets')}
+                onClick={() => navigate('/products')}
                 style={{ textAlign: 'center' }}
               >
-                <BarChartOutlined
-                  style={{ fontSize: 32, color: '#52c41a', marginBottom: 8 }}
+                <ShoppingOutlined
+                  style={{ fontSize: 32, color: '#722ed1', marginBottom: 8 }}
                 />
-                <Title level={5}>Global Targets</Title>
-                <Text type="secondary">Set system-wide sales targets</Text>
+                <Title level={5}>Manage Products</Title>
+                <Text type="secondary">Create and manage products</Text>
               </Card>
             </Col>
-            <Col xs={24} sm={8}>
+            <Col xs={24} sm={6}>
               <Card
                 hoverable
-                onClick={() => navigate('/referral-settings')}
+                onClick={() => navigate('/orders')}
                 style={{ textAlign: 'center' }}
               >
-                <TeamOutlined
-                  style={{ fontSize: 32, color: '#faad14', marginBottom: 8 }}
+                <FileTextOutlined
+                  style={{ fontSize: 32, color: '#fa541c', marginBottom: 8 }}
                 />
-                <Title level={5}>Referral Settings</Title>
-                <Text type="secondary">Configure referral system</Text>
+                <Title level={5}>Manage Orders</Title>
+                <Text type="secondary">View and manage customer orders</Text>
+              </Card>
+            </Col>
+            <Col xs={24} sm={6}>
+              <Card
+                hoverable
+                onClick={() => navigate('/chat-management')}
+                style={{ textAlign: 'center' }}
+              >
+                <MessageOutlined
+                  style={{ fontSize: 32, color: '#13c2c2', marginBottom: 8 }}
+                />
+                <Title level={5}>Chat Management</Title>
+                <Text type="secondary">Manage customer support chats</Text>
               </Card>
             </Col>
           </Row>
@@ -365,3 +409,5 @@ const SuperAdminDashboard = () => {
 };
 
 export default SuperAdminDashboard;
+
+
