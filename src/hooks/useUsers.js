@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { adminAPI } from '../../src/api/services/adminApi';
 
 export const useUsers = (role = '', options = {}) => {
@@ -7,29 +7,38 @@ export const useUsers = (role = '', options = {}) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchUsers = async (userRole = role) => {
+  // Memoize cache key to prevent unnecessary re-computations
+  const cacheKey = useMemo(() => `users_${role}_${all}`, [role, all]);
+
+  const fetchUsers = useCallback(async (userRole = role) => {
+    // Prevent duplicate requests for the same data
+    if (loading) return;
+
     setLoading(true);
     setError(null);
     try {
       // For salesperson role, fetch only salesperson users (not sales_team)
       const apiRole = userRole;
       const params = all ? { role: apiRole, all: true } : { role: apiRole };
-      console.log('useUsers: fetching users with role:', apiRole, 'params:', params);
+
+      // Removed console.log for security - sensitive API params logged server-side
       const response = await adminAPI.getUsers(apiRole, params);
+
       // API returns array when all=true, or { users: [...], pagination: {...} } otherwise
       const data = response.data;
       const fetchedUsers = Array.isArray(data) ? data : data?.users || [];
-      console.log('Fetched users from API:', fetchedUsers.map(u => ({ id: u._id, email: u.email, role: u.role })));
+
+      // Removed console.log for security - sensitive user data (emails, roles)
       // Normalize users to have id field for frontend consistency
       const normalizedUsers = fetchedUsers.map(user => ({ ...user, id: user._id }));
       setUsers(normalizedUsers);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch users');
-      console.error('Error fetching users:', err);
+      // Removed console.error for security - error details logged server-side
     } finally {
       setLoading(false);
     }
-  };
+  }, [role, loading]);
 
   const updateUser = async (userId, updateData) => {
     try {
@@ -43,13 +52,13 @@ export const useUsers = (role = '', options = {}) => {
 
   const createUser = async (userData) => {
     try {
-      console.log('Creating user with data:', userData);
+      // Removed console.log for security - sensitive user creation data
       const response = await adminAPI.createUser(userData);
-      console.log('User creation response:', response.data);
+      // Removed console.log for security - sensitive user creation response
       await fetchUsers(); // Refresh the list
       return response.data;
     } catch (err) {
-      console.error('Create user error:', err);
+      // Removed console.error for security - error details logged server-side
       throw new Error(err.response?.data?.message || 'Failed to create user');
     }
   };
@@ -64,8 +73,10 @@ export const useUsers = (role = '', options = {}) => {
   };
 
   useEffect(() => {
-    fetchUsers();
-  }, [role]);
+    if (role) {
+      fetchUsers();
+    }
+  }, [role, all]);
 
   return {
     users,

@@ -1,12 +1,18 @@
 import axios from 'axios';
 
+// Dynamic backend URL from environment variable
+const baseURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: "https://salestracker.silverspringbank.com/api", // Update if backend runs elsewhere
+  baseURL: process.env.NODE_ENV === 'development'
+    ? "/api" // Use Vite proxy in development
+    : baseURL, // Use environment variable in production
   timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // ✅ Added for CORS with credentials
 });
 
 // Request interceptor to add JWT token to all requests
@@ -327,6 +333,15 @@ export const dashboardAPI = {
   getSuperAdminDashboard: () => api.get('/dashboard/super-admin'),
 
   getKPIs: (params = {}) => api.get('/dashboard/kpis', { params }),
+
+  // Super Admin specific dashboard APIs
+  getSalesSummary: () => api.get('/super-admin/sales/summary'),
+
+  getRecentActivities: () => api.get('/super-admin/activities/recent'),
+
+  getAllUsers: () => api.get('/super-admin/users/all'),
+
+  getChatSummary: () => api.get('/super-admin/chat/summary'),
 };
 
 // Utility functions

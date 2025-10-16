@@ -62,17 +62,14 @@ const ChatManagement = () => {
   } = useUsers('admin');
   const { user } = useUser();
 
-  console.log('DEBUG: ChatManagement user:', user);
-  console.log('DEBUG: ChatManagement admins:', admins);
-  console.log('DEBUG: ChatManagement adminsLoading:', adminsLoading);
-  console.log('DEBUG: ChatManagement adminsError:', adminsError);
+  // Removed sensitive console.log statements for security
 
   // Load all chat sessions
   const loadChatSessions = async () => {
     try {
       setLoading(true);
       const response = await chatAPI.getAllChatSessions();
-      console.log('DEBUG: Loaded chat sessions:', response.data.chatSessions);
+      // Removed console.log for security - sensitive chat session data
       const sessions = response.data.chatSessions || [];
 
       // Separate pending chats (open status) from all chats
@@ -81,7 +78,7 @@ const ChatManagement = () => {
       setChatSessions(sessions);
     } catch (error) {
       message.error('Failed to load chat sessions');
-      console.error('Load chat sessions error:', error);
+      // Removed console.error for security - error details logged server-side
     } finally {
       setLoading(false);
     }
@@ -108,7 +105,7 @@ const ChatManagement = () => {
       setChatMessages(response.data.messages || []);
     } catch (error) {
       message.error('Failed to load messages');
-      console.error('Load messages error:', error);
+      // Removed console.error for security - error details logged server-side
     } finally {
       setMessageLoading(false);
     }
@@ -144,7 +141,7 @@ const ChatManagement = () => {
       }
     } catch (error) {
       message.error('Failed to assign chat');
-      console.error('Assign chat error:', error);
+      // Removed console.error for security - error details logged server-side
     }
   };
 
@@ -168,7 +165,7 @@ const ChatManagement = () => {
       setPendingChats((prev) => prev.filter((chat) => chat.chatId !== chatId));
     } catch (error) {
       message.error('Failed to accept chat request');
-      console.error('Accept pending chat error:', error);
+      // Removed console.error for security - error details logged server-side
     }
   };
 
@@ -299,18 +296,18 @@ const ChatManagement = () => {
               <Avatar
                 size="small"
                 src={
-                  p.user.avatar
+                  p.user && p.user.avatar
                     ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${p.user.avatar}`
                     : undefined
                 }
                 icon={<UserOutlined />}
               >
-                {p.user.firstName?.[0]}
-                {p.user.lastName?.[0]}
+                {p.user?.firstName?.[0]}
+                {p.user?.lastName?.[0]}
               </Avatar>
               <div>
                 <Text strong>
-                  {p.user.firstName} {p.user.lastName}
+                  {p.user?.firstName} {p.user?.lastName}
                 </Text>
                 <br />
                 <Tag
@@ -567,7 +564,7 @@ const ChatManagement = () => {
                         <Avatar
                           src={
                             chat.participants.find((p) => p.role !== 'admin')
-                              ?.user.avatar
+                              ?.user?.avatar
                               ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${chat.participants.find((p) => p.role !== 'admin').user.avatar}`
                               : undefined
                           }
@@ -575,11 +572,11 @@ const ChatManagement = () => {
                         >
                           {
                             chat.participants.find((p) => p.role !== 'admin')
-                              ?.user.firstName?.[0]
+                              ?.user?.firstName?.[0]
                           }
                           {
                             chat.participants.find((p) => p.role !== 'admin')
-                              ?.user.lastName?.[0]
+                              ?.user?.lastName?.[0]
                           }
                         </Avatar>
                       }
@@ -587,11 +584,11 @@ const ChatManagement = () => {
                         <Text strong>
                           {
                             chat.participants.find((p) => p.role !== 'admin')
-                              ?.user.firstName
+                              ?.user?.firstName
                           }{' '}
                           {
                             chat.participants.find((p) => p.role !== 'admin')
-                              ?.user.lastName
+                              ?.user?.lastName
                           }
                         </Text>
                       }
@@ -653,7 +650,7 @@ const ChatManagement = () => {
                     Chat with{' '}
                     {
                       selectedChat.participants.find((p) => p.role !== 'admin')
-                        ?.user.firstName
+                        ?.user?.firstName
                     }
                   </span>
                   <Tag
@@ -755,15 +752,15 @@ const ChatManagement = () => {
                             <Avatar
                               size="small"
                               src={
-                                message.sender.avatar
+                                message.sender?.avatar
                                   ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${message.sender.avatar}`
                                   : undefined
                               }
                               icon={<UserOutlined />}
                               style={{ backgroundColor: '#1890ff' }}
                             >
-                              {message.sender.firstName?.[0]}
-                              {message.sender.lastName?.[0]}
+                              {message.sender?.firstName?.[0]}
+                              {message.sender?.lastName?.[0]}
                             </Avatar>
                           )}
                           <Card

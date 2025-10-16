@@ -58,12 +58,11 @@ const SalesHistory = () => {
     try {
       // Get user from localStorage (as in dashboard)
       const user = JSON.parse(localStorage.getItem('user') || 'null');
-      let response;
-      if (user && user.role === 'salesperson') {
-        response = await api.sales.getSales({ userId: user._id });
-      } else {
-        response = await api.sales.getSales();
-      }
+
+      // Role-based data fetching:
+      // - Admin and Super Admin: fetch all sales
+      // - Salesperson: backend will automatically filter to their own sales
+      const response = await api.sales.getSales();
       setSales(response.data?.sales || response.data || []);
     } catch (error) {
       console.error('Error fetching sales:', error);

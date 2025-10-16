@@ -124,7 +124,7 @@ export default function useDashboardData(user) {
 
       setData(computed);
     } catch (err) {
-      console.error('Error fetching dashboard data (hook):', err);
+      // Removed console.error for security - error details logged server-side
       setError(err.message || 'Failed to fetch dashboard data');
     } finally {
       setLoading(false);
@@ -132,8 +132,10 @@ export default function useDashboardData(user) {
   }, [user]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (user && user._id) {
+      fetchData();
+    }
+  }, [user?._id]);
 
   return {
     loading,
