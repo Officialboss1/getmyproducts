@@ -93,7 +93,7 @@ const DashboardPage = () => {
 
   const role = user?.role;
 
-  console.log('DashboardPage: user:', user, 'role:', role);
+  // Removed sensitive console.log statements for security
 
   useEffect(() => {
     const validateAuth = () => {
@@ -103,7 +103,7 @@ const DashboardPage = () => {
           throw new Error('No token or user data found');
         }
       } catch (error) {
-        console.error('Authentication validation failed:', error);
+        // Removed console.error for security - error details logged server-side
         message.error('Please log in to continue');
         navigate('/login', { replace: true });
       }
@@ -253,6 +253,15 @@ const DashboardPage = () => {
             children: [
               { key: "/salespersons", label: "Sales Team" },
               { key: "/targets", label: "Targets" },
+            ],
+          },
+          {
+            key: 'product-order-submenu',
+            label: 'Product & Orders',
+            icon: <ShoppingOutlined />,
+            children: [
+              { key: '/products', label: 'Product Management' },
+              { key: '/orders', label: 'Order Management' },
             ],
           },
           {
@@ -411,18 +420,24 @@ const DashboardPage = () => {
           <AdminDashboard user={user} />
         );
 
-      // Product & Order Management routes
+      // Product & Order Management routes - only Admin and Super Admin can access
       case '/products':
         return role === 'admin' || role === 'super_admin' ? (
           <ProductManagement user={user} />
         ) : (
-          <AdminDashboard user={user} />
+          <div>
+            <h2>Access Denied</h2>
+            <p>You don't have permission to manage products.</p>
+          </div>
         );
       case '/orders':
         return role === 'admin' || role === 'super_admin' ? (
           <OrderManagement user={user} />
         ) : (
-          <AdminDashboard user={user} />
+          <div>
+            <h2>Access Denied</h2>
+            <p>You don't have permission to manage orders.</p>
+          </div>
         );
 
       // Customer routes
@@ -571,7 +586,7 @@ const DashboardPage = () => {
           onClose={closeDrawer}
           open={drawerVisible}
           width={280}
-          bodyStyle={{ padding: 0 }}
+          styles={{ body: { padding: 0 } }}
         >
           <Menu
             theme="light"

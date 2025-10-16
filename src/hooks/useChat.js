@@ -26,7 +26,18 @@ export const useChat = () => {
   useEffect(() => {
     if (!user) return;
 
-    const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    console.log('useChat: Initializing Socket.IO connection for user:', user._id);
+
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 'ws://localhost:5000';
+    console.log('useChat: Socket URL:', socketUrl, {
+      socketUrl: import.meta.env.VITE_SOCKET_URL,
+      backendUrl: import.meta.env.VITE_BACKEND_URL,
+      apiBaseUrl: import.meta.env.VITE_API_BASE_URL,
+      frontendUrl: import.meta.env.VITE_FRONTEND_URL,
+      fallbackUsed: !import.meta.env.VITE_SOCKET_URL,
+      userId: user._id,
+      timestamp: new Date().toISOString()
+    });
 
     socketRef.current = io(socketUrl, {
       auth: {
@@ -34,17 +45,35 @@ export const useChat = () => {
       },
       transports: ['websocket', 'polling'],
       forceNew: true,
+      timeout: 20000,
+      upgrade: true,
+      rememberUpgrade: true,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      withCredentials: true, // ✅ Added for CORS with credentials
     });
 
     const socket = socketRef.current;
 
     socket.on('connect', () => {
-      console.log('Connected to chat server');
+      console.log('useChat: Connected to chat server', {
+        socketId: socket.id,
+        userId: user?._id,
+        timestamp: new Date().toISOString(),
+        transport: socket.io.engine.transport.name
+      });
       setIsConnected(true);
     });
 
-    socket.on('disconnect', () => {
-      console.log('Disconnected from chat server');
+    socket.on('disconnect', (reason) => {
+      console.log('useChat: Disconnected from chat server', {
+        reason,
+        socketId: socket.id,
+        userId: user?._id,
+        timestamp: new Date().toISOString()
+      });
       setIsConnected(false);
     });
 
@@ -119,15 +148,33 @@ export const useChat = () => {
     });
 
     socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('useChat: Socket connection error:', {
+        message: error.message,
+        code: error.code,
+        type: error.type,
+        description: error.description,
+        context: error.context,
+        url: socketUrl,
+        userId: user?._id,
+        timestamp: new Date().toISOString()
+      });
       setIsConnected(false);
 
-      // Attempt to reconnect after 5 seconds
-      reconnectTimeoutRef.current = setTimeout(() => {
-        if (socketRef.current) {
-          socketRef.current.connect();
-        }
-      }, 5000);
+      // Attempt to reconnect after 5 seconds (only log once per attempt)
+      if (!reconnectTimeoutRef.current) {
+        reconnectTimeoutRef.current = setTimeout(() => {
+          console.log('useChat: Attempting to reconnect...', {
+            attemptTime: new Date().toISOString(),
+            socketConnected: socketRef.current?.connected,
+            socketId: socketRef.current?.id,
+            socketExists: !!socketRef.current
+          });
+          if (socketRef.current && !socketRef.current.connected) {
+            socketRef.current.connect();
+          }
+          reconnectTimeoutRef.current = null;
+        }, 5000);
+      }
     });
 
     return () => {
@@ -480,7 +527,11 @@ export const useChat = () => {
   // Load chat sessions on mount
   useEffect(() => {
     if (user) {
-      loadChatSessions();
+      // Add a small delay to allow Socket.IO connection to establish first
+      const timeoutId = setTimeout(() => {
+        loadChatSessions();
+      }, 500);
+      return () => clearTimeout(timeoutId);
     }
   }, [user, loadChatSessions]);
 
@@ -519,7 +570,9 @@ export const useChat = () => {
       }
     };
 
-    restoreActiveChat();
+    // Add a small delay to allow Socket.IO connection to establish first
+    const timeoutId = setTimeout(restoreActiveChat, 1000);
+    return () => clearTimeout(timeoutId);
   }, [user]); // Only run when user changes (login/logout)
 
   return {

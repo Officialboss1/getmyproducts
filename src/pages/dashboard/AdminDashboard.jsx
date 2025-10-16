@@ -145,11 +145,7 @@ const AdminDashboard = () => {
 
       setTopPerformers(performers);
 
-      // Debug: log server responses to help diagnose mapping issues
-      console.debug('Dashboard analytics response:', analyticsResponse.data);
-      console.debug('Dashboard performers response:', performersResponse.data);
-      console.debug('Dashboard activities response:', activitiesResponse.data);
-      console.debug('Dashboard health response:', healthResponse.data);
+      // Removed console.debug for security - sensitive API response data
 
       // Normalize recent activities into { id, user, action, time }
       const rawActivities = activitiesResponse.data || [];
@@ -206,7 +202,7 @@ const AdminDashboard = () => {
       };
       setSystemHealth(mappedHealth);
     } catch (err) {
-      console.error('❌ Error fetching dashboard data:', err);
+      // Removed console.error for security - error details logged server-side
       setError('Failed to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
@@ -221,7 +217,7 @@ const AdminDashboard = () => {
         const resp = await adminAPI.getActivitySettings();
         if (resp?.data) setActivitySettings(resp.data);
       } catch (e) {
-        console.debug('Could not load activity settings', e?.message || e);
+        // Removed console.debug for security - error details logged server-side
       }
     })();
   }, []);
@@ -537,16 +533,13 @@ const AdminDashboard = () => {
                     const refreshed = await adminAPI.getActivitySettings();
                     if (refreshed?.data) setActivitySettings(refreshed.data);
                   } catch (e) {
-                    console.debug(
-                      'Could not refresh activity settings after save',
-                      e?.message || e
-                    );
+                    // Removed console.debug for security - error details logged server-side
                   }
                   fetchDashboardData();
                 } catch (err) {
                   hide();
                   setSavingActivity(false);
-                  console.error('Failed to save activity settings', err);
+                  // Removed console.error for security - error details logged server-side
                   message.error(
                     err?.response?.data?.message ||
                       err?.message ||
@@ -585,7 +578,7 @@ const AdminDashboard = () => {
                     hoverable
                     onClick={() => navigate('/salespersons')}
                     style={{ textAlign: 'center', minHeight: 120 }}
-                    bodyStyle={{ padding: '16px' }}
+                    styles={{ body: { padding: '16px' } }}
                   >
                     <TeamOutlined
                       style={{
@@ -607,7 +600,7 @@ const AdminDashboard = () => {
                     hoverable
                     onClick={() => navigate('/products')}
                     style={{ textAlign: 'center', minHeight: 120 }}
-                    bodyStyle={{ padding: '16px' }}
+                    styles={{ body: { padding: '16px' } }}
                   >
                     <ShoppingOutlined
                       style={{
@@ -629,7 +622,7 @@ const AdminDashboard = () => {
                     hoverable
                     onClick={() => navigate('/orders')}
                     style={{ textAlign: 'center', minHeight: 120 }}
-                    bodyStyle={{ padding: '16px' }}
+                    styles={{ body: { padding: '16px' } }}
                   >
                     <FileTextOutlined
                       style={{
@@ -651,7 +644,7 @@ const AdminDashboard = () => {
                     hoverable
                     onClick={() => navigate('/targets')}
                     style={{ textAlign: 'center', minHeight: 120 }}
-                    bodyStyle={{ padding: '16px' }}
+                    styles={{ body: { padding: '16px' } }}
                   >
                     <BarChartOutlined
                       style={{

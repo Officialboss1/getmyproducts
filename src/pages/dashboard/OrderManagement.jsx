@@ -287,39 +287,48 @@ const OrderManagement = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Tooltip title="Edit Order">
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => openEditModal(record)}
-            />
-          </Tooltip>
+          {/* Only Admin and Super Admin can edit orders */}
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
+            <Tooltip title="Edit Order">
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => openEditModal(record)}
+              />
+            </Tooltip>
+          )}
 
-          <Select
-            value={record.status}
-            onChange={(value) => handleStatusUpdate(record._id, value)}
-            style={{ width: 100 }}
-            size="small"
-          >
-            <Option value="pending">Pending</Option>
-            <Option value="active">Active</Option>
-            <Option value="completed">Completed</Option>
-            <Option value="cancelled">Cancelled</Option>
-          </Select>
+          {/* Only Admin and Super Admin can update order status */}
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
+            <Select
+              value={record.status}
+              onChange={(value) => handleStatusUpdate(record._id, value)}
+              style={{ width: 100 }}
+              size="small"
+            >
+              <Option value="pending">Pending</Option>
+              <Option value="active">Active</Option>
+              <Option value="completed">Completed</Option>
+              <Option value="cancelled">Cancelled</Option>
+            </Select>
+          )}
 
-          <Popconfirm
-            title="Delete Order"
-            description="Are you sure you want to delete this order?"
-            onConfirm={() => handleDelete(record._id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button
-              type="link"
-              danger
-              icon={<DeleteOutlined />}
-            />
-          </Popconfirm>
+          {/* Only Admin and Super Admin can delete orders */}
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
+            <Popconfirm
+              title="Delete Order"
+              description="Are you sure you want to delete this order?"
+              onConfirm={() => handleDelete(record._id)}
+              okText="Yes"
+              cancelText="No"
+            >
+              <Button
+                type="link"
+                danger
+                icon={<DeleteOutlined />}
+              />
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -352,14 +361,17 @@ const OrderManagement = () => {
             >
               Export
             </Button>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={openCreateModal}
-              className="w-full md:w-auto text-sm sm:text-base"
-            >
-              Create Order
-            </Button>
+            {/* Only Admin and Super Admin can create orders */}
+            {(user?.role === 'admin' || user?.role === 'super_admin') && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={openCreateModal}
+                className="w-full md:w-auto text-sm sm:text-base"
+              >
+                Create Order
+              </Button>
+            )}
           </div>
         </Col>
       </Row>

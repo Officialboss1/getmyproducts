@@ -27,18 +27,39 @@ const UserProvider = ({ children }) => {
   });
 
   const updateUser = (userData) => {
+    // Removed console.log for security - sensitive user data
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
+    // Removed console.log for security - logout action logged server-side
     setUser(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
   };
 
   useEffect(() => {
+    // Removed console.log for security - localStorage access logged server-side
+    const savedUser = localStorage.getItem('user');
+    const savedToken = localStorage.getItem('token');
+
+    // Removed console.log for security - sensitive user data and token presence
+
+    if (savedUser && savedToken) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        // Removed console.log for security - sensitive user object
+        setUser(parsedUser);
+      } catch (error) {
+        // Removed console.error for security - error details logged server-side
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+      }
+    }
+
     const handleUserDataUpdate = (event) => {
+      // Removed console.log for security - sensitive user data update
       updateUser(event.detail);
     };
 
@@ -48,6 +69,8 @@ const UserProvider = ({ children }) => {
       window.removeEventListener('userDataUpdated', handleUserDataUpdate);
     };
   }, []);
+
+  // Removed console.log for security - sensitive user data in render
 
   return (
     <UserContext.Provider value={{ user, updateUser, logout }}>

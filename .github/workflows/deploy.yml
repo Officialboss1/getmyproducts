@@ -12,22 +12,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout repo
       - name: 📥 Checkout Repository
         uses: actions/checkout@v3
 
+      # 2. Setup Node
       - name: 🛠️ Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
 
+      # 3. Install dependencies
       - name: 📦 Install Dependencies
         run: npm install
 
+      # 4. Build production files
       - name: 🏗️ Build Production Frontend
         run: npm run build
 
-      # 🔥 SFTP deployment step — replaces the old FTP action
+      # 5. Deploy the *contents* of /dist (not the folder itself)
       - name: 🚀 Deploy via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -35,7 +39,10 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: 22
-          local_path: ./
+
+          # Upload only dist contents, not the dist directory
+          local_path: ./dist/
           remote_path: /home/okwe/getmyproducts.com/
+
           sftp_only: true
           delete_remote_files: true

@@ -72,16 +72,16 @@ export const superAdminAPI = {
     api.put('/settings/system', settingsData),
 
   // 🆕 Sales Summary (Fix for SuperAdminDashboard)
-  getSalesSummary: () => api.get('/sales/summary'),
+  getSalesSummary: () => api.get('/super-admin/sales/summary'),
 
   // 🆕 Recent Activities (Optional for Dashboard Feed)
-  getRecentActivities: () => api.get('/activities/recent'),
+  getRecentActivities: () => api.get('/super-admin/activities/recent'),
 
   // 🆕 All Users for Dashboard Stats
-  getAllUsers: () => api.get('/users/all'),
+  getAllUsers: () => api.get('/super-admin/users/all'),
 
   // 🆕 Chat Summary for Dashboard
-  getChatSummary: () => api.get('/chat/summary'),
+  getChatSummary: () => api.get('/super-admin/chat/summary'),
 
   // 🆕 Products Management (Super Admin can manage all)
   getProducts: (params = {}) => api.get('/products', { params }),

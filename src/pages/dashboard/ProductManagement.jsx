@@ -203,15 +203,18 @@ const ProductManagement = () => {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Tooltip title="Edit Product">
-            <Button
-              type="link"
-              icon={<EditOutlined />}
-              onClick={() => openEditModal(record)}
-            />
-          </Tooltip>
+          {/* Admin and Super Admin can edit products */}
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
+            <Tooltip title="Edit Product">
+              <Button
+                type="link"
+                icon={<EditOutlined />}
+                onClick={() => openEditModal(record)}
+              />
+            </Tooltip>
+          )}
 
-          {user?.role === 'super_admin' && (
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
             <Tooltip title={record.is_active ? 'Deactivate' : 'Activate'}>
               <Switch
                 checked={record.is_active}
@@ -221,7 +224,7 @@ const ProductManagement = () => {
             </Tooltip>
           )}
 
-          {user?.role === 'super_admin' && (
+          {(user?.role === 'admin' || user?.role === 'super_admin') && (
             <Popconfirm
               title="Delete Product"
               description="Are you sure you want to delete this product?"
@@ -261,7 +264,7 @@ const ProductManagement = () => {
             >
               Refresh
             </Button>
-            {user?.role === 'super_admin' && (
+            {(user?.role === 'admin' || user?.role === 'super_admin') && (
               <Button
                 icon={<DownloadOutlined />}
                 onClick={handleExport}
@@ -270,7 +273,8 @@ const ProductManagement = () => {
                 Export
               </Button>
             )}
-            {user?.role === 'super_admin' && (
+            {/* Admin and Super Admin can create products */}
+            {(user?.role === 'admin' || user?.role === 'super_admin') && (
               <Button
                 type="primary"
                 icon={<PlusOutlined />}

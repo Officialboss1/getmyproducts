@@ -60,8 +60,10 @@ const LoginPage = () => {
 
       console.log('LoginPage: Stored user:', user, 'token:', token);
 
-      message.success('Login successful!');
-      navigate('/dashboard');
+      // Force a page reload to ensure context updates
+      window.location.href = '/dashboard';
+      // message.success('Login successful!');
+      // navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
       localStorage.removeItem('user');
